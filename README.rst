@@ -39,3 +39,31 @@ To add these providers to the end of eodag's providers configuration that reside
 Python installation or virtual environment::
 
     cat providers.yml >> $(python -m pip show eodag | grep Location | cut -d' ' -f2)/eodag/resources/providers.yml
+
+Contribute
+==========
+
+If you intend to contribute to eodag-sentinelsat source code::
+
+    git clone https://bitbucket.org/geostorm/eodag-sentinelsat.git
+    cd eodag-sentinelsat
+    python -m pip intall -e .[standalone,dev]
+    tox
+
+LICENSE
+=======
+
+eodag-sentinelsat is licensed under GPLv3.
+See LICENSE file for details.
+
+
+AUTHORS
+=======
+
+eodag-sentinelsat is developed by CS Systèmes d'Information.
+
+
+CREDITS
+=======
+
+See NOTICE file.

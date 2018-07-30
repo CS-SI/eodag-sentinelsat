@@ -5,8 +5,7 @@ see LICENSE file or https://www.gnu.org/licenses/gpl.html for details.
 
 This software includes code from the sentinelsat project.
     https://github.com/sentinelsat/sentinelsat
-    https://github.com/sentinelsat/sentinelsat
-    sentinelsat is released under The GNU General Public License v3+ (GPLv3+):
+    sentinelsat is released under The GNU General Public License v3 (GPLv3):
     https://www.gnu.org/licenses/gpl.html
 
 This software includes code from the tqdm project.
