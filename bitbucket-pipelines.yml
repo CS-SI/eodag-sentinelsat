@@ -1,0 +1,17 @@
+image: python:3.5.5-jessie
+
+pipelines:
+  default:
+    - step:
+        script:
+          - python -m pip install .[dev]
+          - tox
+  branches:
+    master:
+      - step:
+          script:
+            - python -m pip install .[dev]
+            - tox
+            - python setup.py sdist bdist_wheel
+            - python -m pip install twine
+            - twine upload dist/*
