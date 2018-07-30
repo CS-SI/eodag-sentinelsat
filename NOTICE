@@ -1,0 +1,28 @@
+eodag-sentinelsat Copyright 2018, CS Systèmes d'Information, http://www.c-s.fr
+
+This software is distributed under the GNU General Public License v3,
+see LICENSE file or https://www.gnu.org/licenses/gpl.html for details.
+
+This software includes code from the sentinelsat project.
+    https://github.com/sentinelsat/sentinelsat
+    https://github.com/sentinelsat/sentinelsat
+    sentinelsat is released under The GNU General Public License v3+ (GPLv3+):
+    https://www.gnu.org/licenses/gpl.html
+
+This software includes code from the tqdm project.
+    Copyright (c) 2013 noamraph
+    https://github.com/tqdm/tqdm
+    tqdm is released under the MIT license:
+    http://www.opensource.org/licenses/mit-license.php
+
+This software includes code from the Shapely project.
+    Copyright (c) 2007, Sean C. Gillies
+    https://github.com/Toblerity/Shapely
+    Shapely is released under the BSD 3 clause license:
+    https://opensource.org/licenses/BSD-3-Clause
+
+In "standalone" mode, this software includes code from the EODAG project.
+    Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
+    https://bitbucket.org/geostorm/eodag
+    EODAG is released under the Apache Software License (ASL) 2.0.
+    http://www.apache.org/licenses/LICENSE-2.0
