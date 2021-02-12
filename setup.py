@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-
 from setuptools import setup
 
 
@@ -47,11 +46,9 @@ setup(
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: GIS',
     ),
