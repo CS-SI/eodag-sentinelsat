@@ -1,6 +1,6 @@
 
 ---
-!provider
+  !provider
 name: scihub
 priority: 0
 api: !plugin
@@ -14,10 +14,23 @@ api: !plugin
     - '&'
     - ':'
   pagination:
-    next_page_query_obj: '{{"limit":{items_per_page},"offset":{skip}}}'
     next_page_url_tpl: '{url}/odata/v1/Products?{search}&$top={items_per_page}&$skip={skip}'
     total_items_nb_key_path: 'https://scihub.copernicus.eu/apihub/odata/v1/Products/$count'
   results_entry: 'value'
+  # literal_search_params:
+  #   $format: json
+  # free_text_search_operations:
+  #   $search:
+  #     union: ' OR '
+  #     wrapper: '"{}"'
+  #     operations:
+  #       AND:
+  #         - 'footprint:"Intersects({geometry#to_wkt})"'
+  #         - '( (platformname:{platform} AND producttype:{productType}) )'
+  #         - '( cloudcoverpercentage:[0 TO {cloudCover}] )'
+  #         - '( beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO {completionTimeFromAscendingNode#to_iso_utc_datetime}] AND endPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO {completionTimeFromAscendingNode#to_iso_utc_datetime}] )'
+  #         - '( {raw} )'
+  #         - '({id#remove_extension})'
   discover_metadata:
     auto_discovery: true
     metadata_pattern: '^[a-zA-Z0-9]+$'
@@ -86,7 +99,7 @@ api: !plugin
       - format
       - '$.format'
     processingBaseline: '$.processingbaseline'
-    filename:
+    title:
       - filename
       - '$.filename'
     instrumentShortname: '$.instrumentshortname'
@@ -103,41 +116,41 @@ api: !plugin
     storageStatus: '{$.storage_status#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
 products:
   S1_SAR_OCN:
-    productType: OCN
-    platform: Sentinel-1
+    product_type: OCN
+    collection: S1
   S1_SAR_GRD:
-    productType: GRD
-    platform: Sentinel-1
+    product_type: GRD
+    collection: S1
   S1_SAR_SLC:
-    productType: SLC
-    platform: Sentinel-1
+    product_type: SLC
+    collection: S1
   S2_MSI_L1C:
-    productType: S2MSI1C
-    platform: Sentinel-2
+    collection: S2ST
+    product_type: S2MSI1C
   S2_MSI_L2A:
-    productType: S2MSI2A
-    platform: Sentinel-2
+    collection: S2ST
+    product_type: S2MSI2A
   S3_EFR:
-    productType: OL_1_EFR___
-    platform: Sentinel-3
+    product_type: OL_1_EFR___
+    collection: S3
   S3_ERR:
-    productType: OL_1_ERR___
-    platform: Sentinel-3
+    product_type: OL_1_ERR___
+    collection: S3
   S3_OLCI_L2LFR:
-    productType: OL_2_LFR___
-    platform: Sentinel-3
+    product_type: OL_2_LFR___
+    collection: S3
   S3_OLCI_L2LRR:
-    productType: OL_2_LRR___
-    platform: Sentinel-3
+    product_type: OL_2_LRR___
+    collection: S3
   S3_SLSTR_L1RBT:
-    productType: SL_1_RBT___
-    platform: Sentinel-3
+    product_type: SL_1_RBT___
+    collection: S3
   S3_SLSTR_L2LST:
-    productType: SL_2_LST___
-    platform: Sentinel-3
+    product_type: SL_2_LST___
+    collection: S3
   S3_LAN:
-    productType: SR_2_LAN___
-    platform: Sentinel-3
+    product_type: SR_2_LAN___
+    collection: S3
 
 # --- Available keywords: ---
 #'acquisitiontype': 'NOMINAL',
