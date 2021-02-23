@@ -8,7 +8,7 @@ with open(os.path.join(BASEDIR, 'README.rst'), 'r') as f:
 
 setup(
     name="eodag_sentinelsat",
-    version="0.2.0",
+    version="0.1.1",
     description="Sentinelsat plugin to EODAG (https://bitbucket.org/geostorm/eodag)",
     long_description=readme,
     author="CS Systemes d'Information (CSSI)",
@@ -29,7 +29,7 @@ setup(
     },
     entry_points={
         'eodag.plugins.api': [
-            'SentinelsatAPI = eodag_sentinelsat:SentinelsatAPI',
+            'SentinelsatAPI = eodag_sentinelsat.eodag_sentinelsat:SentinelsatAPI',
         ]
     },
     project_urls={
