@@ -1,6 +1,6 @@
 
 ---
-  !provider
+!provider
 name: scihub
 priority: 0
 api: !plugin
