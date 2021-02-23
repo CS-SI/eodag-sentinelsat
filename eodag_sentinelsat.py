@@ -20,7 +20,8 @@ import zipfile
 from datetime import datetime
 
 from eodag.plugins.search.qssearch import ODataV4Search
-from sentinelsat import SentinelAPI
+from eodag.utils.exceptions import RequestError, MisconfiguredError
+from sentinelsat import SentinelAPI, SentinelAPIError
 from tqdm import tqdm
 from eodag.plugins.apis.base import Api
 
@@ -31,6 +32,13 @@ class SentinelsatAPI(Api, ODataV4Search):
     """
     Api that enables to search and download EO products from catalogs implementing the SchiHub interface.
     It is basically a wrapper around sentinelsat, enabling it to be used on eodag.
+
+    We use the API to download data. Available keywords are:
+    [area, date, raw, area_relation, order_by, limit, offset, **keywords]
+    https://sentinelsat.readthedocs.io/en/stable/api.html#sentinelsat.SentinelAPI.query
+
+    The keywords are those that can be found here:
+    https://sentinelsat.readthedocs.io/en/stable/api.html#opensearch-example
     """
 
     def __init__(self, provider, config):
@@ -90,6 +98,20 @@ class SentinelsatAPI(Api, ODataV4Search):
                 logger.debug('Something went wrong during the query with self.api api:\n %s', tb.format_exc())
                 logger.info('No results found !')
 
+            except SentinelAPIError as ex:
+                # TODO: change it to ServerError when ssat 0.15 will be published !
+                """
+                    SentinelAPIError -- the parent, catch-all exception. Only used when no other more specific exception can be applied.
+                    SentinelAPILTAError -- raised when retrieving a product from the Long Term Archive.
+                    ServerError -- raised when the server responded in an unexpected manner, typically due to undergoing maintenance.
+                    UnauthorizedError -- raised when attempting to retrieve a product with incorrect credentials.
+                    QuerySyntaxError -- raised when the query string could not be parsed on the server side.
+                    QueryLengthError -- raised when the query string length was excessively long.
+                    InvalidKeyError -- raised when product with given key was not found on the server.
+                    InvalidChecksumError -- MD5 checksum of a local file does not match the one from the server.
+                """
+                raise RequestError(ex) from ex
+
         return eo_products, len(eo_products)
 
     def download(self, product, auth=None, progress_callback=None, **kwargs) -> str:
@@ -107,27 +129,11 @@ class SentinelsatAPI(Api, ODataV4Search):
 
         # Download all products
         prod_id = product.properties['id']
-        product_info = self.api.download_all(
-            [prod_id],
-            directory_path=self.config.outputs_prefix
-        )
-
-        # Only select the downloaded products
-        product_info = product_info[0][prod_id]
+        product_info = self.api.download_all([prod_id], directory_path=self.config.outputs_prefix)
 
         # Extract them if needed
-        if self.config.extract and product_info['path'].endswith('.zip'):
-            logger.info('Extraction activated')
-            with zipfile.ZipFile(product_info['path'], 'r') as zfile:
-                fileinfos = zfile.infolist()
-                with tqdm(fileinfos,
-                          unit='file',
-                          desc='Extracting files from {}'.format(product_info['path'])) as progressbar:
-                    for fileinfo in progressbar:
-                        zfile.extract(fileinfo, path=self.config.outputs_prefix)
-            return product_info['path'][:product_info['path'].index('.zip')]
-        else:
-            return product_info['path']
+        path = self.extract(product_info[0][prod_id])
+        return path
 
     def download_all(self, product, auth=None, progress_callback=None, **kwargs) -> list:
         """
@@ -147,35 +153,44 @@ class SentinelsatAPI(Api, ODataV4Search):
         product_info = self.api.download_all(prod_ids, directory_path=self.config.outputs_prefix)
 
         # Only select the downloaded products
-        paths = []
-        for prod_id in prod_ids:
-            info = product_info[0][prod_id]
-
-            # Extract them if needed
-            if self.config.extract and info['path'].endswith('.zip'):
-                logger.info('Extraction activated')
-                with zipfile.ZipFile(info['path'], 'r') as zfile:
-                    fileinfos = zfile.infolist()
-                    with tqdm(fileinfos,
-                              unit='file',
-                              desc='Extracting files from {}'.format(info['path'])) as progressbar:
-                        for fileinfo in progressbar:
-                            zfile.extract(fileinfo, path=self.config.outputs_prefix)
-                paths.append(info['path'][:info['path'].index('.zip')])
-            else:
-                paths.append(info['path'])
-
+        paths = [self.extract(product_info[0][prod_id]) for prod_id in prod_ids]
         return paths
 
-    def _init_api(self):
+    def extract(self, prod_info: dict) -> str:
+        """
+        Extract products if needed
+
+        :param prod_info: Product info
+        :return: Path (archive or extracted according to the config)
+        """
+        # Extract them if needed
+        if self.config.extract and prod_info['path'].endswith('.zip'):
+            logger.info('Extraction activated')
+            with zipfile.ZipFile(prod_info['path'], 'r') as zfile:
+                fileinfos = zfile.infolist()
+                with tqdm(fileinfos,
+                          unit='file',
+                          desc='Extracting files from {}'.format(prod_info['path'])) as progressbar:
+                    for fileinfo in progressbar:
+                        zfile.extract(fileinfo, path=self.config.outputs_prefix)
+            path = prod_info['path'][:prod_info['path'].index('.zip')]
+        else:
+            path = prod_info['path']
+
+        return path
+
+    def _init_api(self) -> None:
         """ Initialize Sentinelsat API if needed (connection and link) """
         if not self.api:
-            logger.debug('Initializing Sentinelsat API')
-            self.api = SentinelAPI(
-                self.config.credentials['username'],
-                self.config.credentials['password'],
-                self.config.endpoint
-            )
+            try:
+                logger.debug('Initializing Sentinelsat API')
+                self.api = SentinelAPI(
+                    self.config.credentials['username'],
+                    self.config.credentials['password'],
+                    self.config.endpoint
+                )
+            except KeyError as ex:
+                raise MisconfiguredError(ex) from ex
         else:
             logger.debug('Sentinelsat API already initialized')
 
