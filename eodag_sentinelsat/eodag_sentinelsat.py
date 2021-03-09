@@ -125,15 +125,10 @@ class SentinelsatAPI(Api, ODataV4Search):
         :return: Downloaded product path
         """
         # Init Sentinelsat API if needed (connect...)
-        self._init_api()
+        prods = self.download_all(product, auth, progress_callback, **kwargs)
 
-        # Download all products
-        prod_id = product.properties['uuid']
-        success, _, _ = self.api.download_all([prod_id], directory_path=self.config.outputs_prefix)
-
-        # Extract the downloaded product
-        path = self.extract(success[prod_id])
-        return path
+        # Mange the case if nothing has been downloaded
+        return prods[0] if len(prods) > 0 else ""
 
     def download_all(self, product, auth=None, progress_callback=None, **kwargs) -> list:
         """
@@ -153,8 +148,8 @@ class SentinelsatAPI(Api, ODataV4Search):
         prod_ids = [prod.properties["uuid"] for prod in product.data]
         success, _, _ = self.api.download_all(prod_ids, directory_path=self.config.outputs_prefix)
 
-        # Only extract the downloaded products
-        paths = [self.extract(success[prod_id]) for prod_id in prod_ids]
+        # Only extract the successfully downloaded products
+        paths = [self.extract(prods) for prods in success.values()]
         return paths
 
     def extract(self, prod_info: dict) -> str:
