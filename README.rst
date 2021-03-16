@@ -42,7 +42,8 @@ If you intend to contribute to eodag-sentinelsat source code::
 
     git clone https://bitbucket.org/geostorm/eodag-sentinelsat.git
     cd eodag-sentinelsat
-    python -m pip intall -e .[standalone,dev]
+    python -m pip install -e .[standalone,dev]
+    pre-commit install
     tox
 
 LICENSE
