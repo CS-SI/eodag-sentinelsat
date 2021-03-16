@@ -1,7 +1,7 @@
 eodag-sentinelsat
 =================
 
-This is a repository for sentinelsat plugin to `EODAG <https://bitbucket.org/geostorm/eodag>`_.
+This is a repository for sentinelsat plugin to `EODAG <https://github.com/CS-SI/eodag>`_.
 It's an `Api <https://eodag.readthedocs.io/en/latest/api.html#eodag.plugins.apis.base.Api>`_ plugin that enables to
 search and download EO products from catalogs implementing the `SchiHub interface <https://scihub.copernicus.eu/userguide/3FullTextSearch>`_.
 It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.io>`_, enabling it to be used on eodag.
@@ -32,7 +32,7 @@ To add these providers to the end of eodag's providers configuration that reside
 Python installation or virtual environment::
 
     # First download the providers file
-    wget "https://bitbucket.org/geostorm/eodag-sentinelsat/src/master/providers.yml"
+    wget "https://github.com/CS-SI/eodag-sentinelsat/src/master/providers.yml"
     cat providers.yml >> $(python -m pip show eodag | grep Location | cut -d' ' -f2)/eodag/resources/providers.yml
 
 Contribute
@@ -40,7 +40,7 @@ Contribute
 
 If you intend to contribute to eodag-sentinelsat source code::
 
-    git clone https://bitbucket.org/geostorm/eodag-sentinelsat.git
+    git clone https://github.com/CS-SI/eodag-sentinelsat.git
     cd eodag-sentinelsat
     python -m pip install -e .[standalone,dev]
     pre-commit install

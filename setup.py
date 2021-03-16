@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, CS GROUP - France, http://www.c-s.fr
+# eodag-sentinelsat, a plugin for searching and downloading products from Copernicus Scihub
+#     Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
-# This file is part of EODAG project
-#     https://www.github.com/CS-SI/EODAG
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#     You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 """Sentinelsat plugin to EODAG."""
 
 import os
@@ -28,11 +27,11 @@ with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
 setup(
     name="eodag_sentinelsat",
     version="0.1.0",
-    description="Sentinelsat plugin to EODAG (https://bitbucket.org/geostorm/eodag)",
+    description="Sentinelsat plugin to EODAG (https://github.com/CS-SI/eodag)",
     long_description=readme,
     author="CS Systemes d'Information (CSSI)",
     author_email="admin@geostorm.eu",
-    url="https://bitbucket.org/geostorm/eodag-sentinelsat",
+    url="https://github.com/CS-SI/eodag-sentinelsat",
     license="GPLv3",
     entry_points={
         "eodag.plugins.api": [
@@ -55,9 +54,9 @@ setup(
         ],
     },
     project_urls={
-        "Bug Tracker": "https://bitbucket.org/geostorm/eodag-sentinelsat/issues/",
-        "Documentation": "https://bitbucket.org/geostorm/eodag-sentinelsat/src/master/README.rst",
-        "Source Code": "https://bitbucket.org/geostorm/eodag-sentinelsat",
+        "Bug Tracker": "https://github.com/CS-SI/eodag-sentinelsat/issues/",
+        "Documentation": "https://github.com/CS-SI/eodagsentinelsat/blob/master/README.rst",
+        "Source Code": "https://github.com/CS-SI/eodag-sentinelsat",
     },
     classifiers=(
         "Development Status :: 1 - Planning",

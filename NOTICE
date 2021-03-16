@@ -21,7 +21,7 @@ This software includes code from the Shapely project.
     https://opensource.org/licenses/BSD-3-Clause
 
 In "standalone" mode, this software includes code from the EODAG project.
-    Copyright 2018, CS Systemes d'Information, http://www.c-s.fr
-    https://bitbucket.org/geostorm/eodag
+    Copyright 2021, CS GROUP - France, http://www.c-s.fr
+    https://github.com/CS-SI/eodag
     EODAG is released under the Apache Software License (ASL) 2.0.
     http://www.apache.org/licenses/LICENSE-2.0

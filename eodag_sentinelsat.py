@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # eodag-sentinelsat, a plugin for searching and downloading products from Copernicus Scihub
-#     Copyright (C) 2018, CS Systemes d'Information, http://www.c-s.fr
+#     Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
