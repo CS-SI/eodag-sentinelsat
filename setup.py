@@ -26,7 +26,7 @@ with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
 
 setup(
     name="eodag_sentinelsat",
-    version="0.1.0",
+    version="0.2.0",
     description="Sentinelsat plugin to EODAG (https://github.com/CS-SI/eodag)",
     long_description=readme,
     author="CS Systemes d'Information (CSSI)",
@@ -44,7 +44,7 @@ setup(
     ],
     extras_require={
         "standalone": [
-            "eodag >= 2.1.0",
+            "eodag >= 2.1.1",
         ],
         "dev": [
             "pre-commit",
@@ -56,16 +56,18 @@ setup(
         "Documentation": "https://github.com/CS-SI/eodagsentinelsat/blob/master/README.rst",
         "Source Code": "https://github.com/CS-SI/eodag-sentinelsat",
     },
-    classifiers=(
+    classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: GIS",
-    ),
+    ],
 )
