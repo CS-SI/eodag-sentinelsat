@@ -35,6 +35,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+cover
 htmlcov/
 .tox/
 .coverage
@@ -44,6 +45,8 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+test-reports
+.pytest_cache/
 
 # Translations
 *.mo
@@ -90,7 +93,19 @@ ENV/
 .ropeproject
 
 # All kind of user files (mostly configuration files with passwords)
-*/*.user*
-*.user*
+*.user.yml*
+docs/tutorials/eodag_workspace/search_results.geojson
+docs/tutorials/eodag_workspace/.downloaded
+examples/eodag_workspace
+tests/resources/user_conf.yml
+search_results.geojson
 
+# IDE
+# Pycharm
 .idea/*
+# VSCode
+.vscode
+# Eclipse/PyDev
+.project
+.pydevproject
+.settings/
