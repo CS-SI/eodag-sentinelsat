@@ -24,7 +24,7 @@ from datetime import datetime
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils import get_progress_callback
-from eodag.utils.exceptions import RequestError, MisconfiguredError
+from eodag.utils.exceptions import MisconfiguredError, RequestError
 from sentinelsat import SentinelAPI, SentinelAPIError
 
 logger = logging.getLogger("eodag.plugins.apis.sentinelsat")
@@ -91,6 +91,7 @@ class SentinelsatAPI(Api, ODataV4Search):
 
             except TypeError:
                 import traceback as tb
+
                 # Sentinelsat api query method raises a TypeError for finding None in the json feed received
                 # as a response from the sentinel server, when looking for 'opensearch:totalResults' key.
                 # This may be interpreted as the the api not finding any result from the query.
@@ -104,14 +105,16 @@ class SentinelsatAPI(Api, ODataV4Search):
             except SentinelAPIError as ex:
                 # TODO: change it to ServerError when ssat 0.15 will be published !
                 """
-                    SentinelAPIError -- the parent, catch-all exception. Only used when no other more specific exception can be applied.
-                    SentinelAPILTAError -- raised when retrieving a product from the Long Term Archive.
-                    ServerError -- raised when the server responded in an unexpected manner, typically due to undergoing maintenance.
-                    UnauthorizedError -- raised when attempting to retrieve a product with incorrect credentials.
-                    QuerySyntaxError -- raised when the query string could not be parsed on the server side.
-                    QueryLengthError -- raised when the query string length was excessively long.
-                    InvalidKeyError -- raised when product with given key was not found on the server.
-                    InvalidChecksumError -- MD5 checksum of a local file does not match the one from the server.
+                SentinelAPIError -- the parent, catch-all exception.
+                    Only used when no other more specific exception can be applied.
+                SentinelAPILTAError -- raised when retrieving a product from the Long Term Archive.
+                ServerError -- raised when the server responded in an unexpected manner,
+                    typically due to undergoing maintenance.
+                UnauthorizedError -- raised when attempting to retrieve a product with incorrect credentials.
+                QuerySyntaxError -- raised when the query string could not be parsed on the server side.
+                QueryLengthError -- raised when the query string length was excessively long.
+                InvalidKeyError -- raised when product with given key was not found on the server.
+                InvalidChecksumError -- MD5 checksum of a local file does not match the one from the server.
                 """
                 raise RequestError(ex) from ex
 
@@ -161,7 +164,7 @@ class SentinelsatAPI(Api, ODataV4Search):
 
     def extract(self, product_info: dict) -> str:
         """
-        Extract products if needed
+        Extract products if needed.
 
         :param product_info: Product info
         :return: Path (archive or extracted according to the config)
@@ -185,14 +188,14 @@ class SentinelsatAPI(Api, ODataV4Search):
             return product_info["path"]
 
     def _init_api(self) -> None:
-        """ Initialize Sentinelsat API if needed (connection and link) """
+        """Initialize Sentinelsat API if needed (connection and link)."""
         if not self.api:
             try:
-                logger.debug('Initializing Sentinelsat API')
+                logger.debug("Initializing Sentinelsat API")
                 self.api = SentinelAPI(
-                    self.config.credentials['username'],
-                    self.config.credentials['password'],
-                    self.config.endpoint
+                    self.config.credentials["username"],
+                    self.config.credentials["password"],
+                    self.config.endpoint,
                 )
             except KeyError as ex:
                 raise MisconfiguredError(ex) from ex
