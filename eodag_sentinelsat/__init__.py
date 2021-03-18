@@ -1,0 +1,1 @@
+"""EODAG-SentinelSat package."""
