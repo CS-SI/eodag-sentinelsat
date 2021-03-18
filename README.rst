@@ -3,8 +3,10 @@ eodag-sentinelsat
 
 This is a repository for sentinelsat plugin to `EODAG <https://github.com/CS-SI/eodag>`_.
 It's an `Api <https://eodag.readthedocs.io/en/latest/api.html#eodag.plugins.apis.base.Api>`_ plugin that enables to
-search and download EO products from catalogs implementing the `SchiHub interface <https://scihub.copernicus.eu/userguide/3FullTextSearch>`_.
+search and download EO products from catalogs implementing the
+`SciHub / Copernicus Open Access Hub interface <https://scihub.copernicus.eu/userguide/WebHome>`_.
 It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.io>`_, enabling it to be used on eodag.
+
 
 Installation
 ============
@@ -20,20 +22,6 @@ Installation
 
   The standalone install will install eodag itself along the way
 
-Providers configurations
-========================
-
-eodag-sentinelsat comes with a `providers configuration file <providers.yml>`_ where providers that
-implement scihub interface are configured. Currently available providers are:
-
-* scihub: uses `SentinelsatAPI` for `the scihub apihub <https://scihub.copernicus.eu/apihub/>`_
-
-To add these providers to the end of eodag's providers configuration that resides in the site packages of your
-Python installation or virtual environment::
-
-    # First download the providers file
-    wget "https://github.com/CS-SI/eodag-sentinelsat/src/master/providers.yml"
-    cat providers.yml >> $(python -m pip show eodag | grep Location | cut -d' ' -f2)/eodag/resources/providers.yml
 
 Contribute
 ==========
@@ -46,6 +34,7 @@ If you intend to contribute to eodag-sentinelsat source code::
     pre-commit install
     tox
 
+
 LICENSE
 =======
 
@@ -56,7 +45,7 @@ See LICENSE file for details.
 AUTHORS
 =======
 
-eodag-sentinelsat is developed by CS Systèmes d'Information.
+eodag-sentinelsat is developed by `CS GROUP - France <https://www.c-s.fr>`_.
 
 
 CREDITS

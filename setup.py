@@ -40,9 +40,7 @@ setup(
     },
     py_modules=["eodag_sentinelsat"],
     install_requires=[
-        "tqdm",
         "sentinelsat",
-        "shapely",
     ],
     extras_require={
         "standalone": [
