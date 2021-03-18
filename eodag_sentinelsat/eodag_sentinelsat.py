@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # eodag-sentinelsat, a plugin for searching and downloading products from Copernicus Scihub
-#     Copyright (C) 2018, CS Systemes d'Information, http://www.c-s.fr
+#     Copyright 2021, CS GROUP - France, http://www.c-s.fr
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -21,14 +21,13 @@ import logging
 import zipfile
 from datetime import datetime
 
-from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils import get_progress_callback
 from eodag.utils.exceptions import RequestError, MisconfiguredError
 from sentinelsat import SentinelAPI, SentinelAPIError
 
-logger = logging.getLogger('eodag.plugins.apis.sentinelsat')
+logger = logging.getLogger("eodag.plugins.apis.sentinelsat")
 
 
 class SentinelsatAPI(Api, ODataV4Search):
@@ -47,12 +46,14 @@ class SentinelsatAPI(Api, ODataV4Search):
     """
 
     def __init__(self, provider, config):
+        """Init Sentinelsat plugin."""
         super().__init__(provider, config)
         self.api = None
 
     def query(self, items_per_page=None, page=None, count=True, **kwargs):
         """
-        Query
+        Query for products.
+
         :param product_type: (str) Product Type, not used, just here for compatibility reasons
         :param kwargs: (dict) Metadata
         :return: (list, int) List and number of queried products
@@ -94,8 +95,11 @@ class SentinelsatAPI(Api, ODataV4Search):
                 # as a response from the sentinel server, when looking for 'opensearch:totalResults' key.
                 # This may be interpreted as the the api not finding any result from the query.
                 # This is what is assumed here.
-                logger.debug('Something went wrong during the query with self.api api:\n %s', tb.format_exc())
-                logger.info('No results found !')
+                logger.debug(
+                    "Something went wrong during the query with self.api api:\n %s",
+                    tb.format_exc(),
+                )
+                logger.info("No results found !")
 
             except SentinelAPIError as ex:
                 # TODO: change it to ServerError when ssat 0.15 will be published !
@@ -115,7 +119,7 @@ class SentinelsatAPI(Api, ODataV4Search):
 
     def download(self, product, auth=None, progress_callback=None, **kwargs) -> str:
         """
-        Download products
+        Download product.
 
         :param product: (EOProduct) EOProduct
         :param auth: Not used, just here for compatibility reasons
@@ -123,26 +127,20 @@ class SentinelsatAPI(Api, ODataV4Search):
         :param kwargs: Not used, just here for compatibility reasons
         :return: Downloaded product path
         """
-        prods = self.download_all(
-            SearchResult(
-                [
-                    product,
-                ]
-            ),
-            auth,
-            progress_callback,
-            **kwargs
-        )
+        # Init Sentinelsat API if needed (connect...)
+        prods = self.download_all(product, auth, progress_callback, **kwargs)
 
         # Manage the case if nothing has been downloaded
         return prods[0] if len(prods) > 0 else ""
 
-    def download_all(self, search_result, auth=None, progress_callback=None, **kwargs) -> list:
+    def download_all(
+        self, search_result, auth=None, progress_callback=None, **kwargs
+    ) -> list:
         """
-        Download products
+        Download all products.
 
-
-        :param product: EOProduct
+        :param search_result: A collection of EO products resulting from a search
+        :type search_result: :class:`~eodag.api.search_result.SearchResult`
         :param auth: Not used, just here for compatibility reasons
         :param progress_callback: Not used, just here for compatibility reasons
         :param kwargs: Not used, just here for compatibility reasons
@@ -153,7 +151,9 @@ class SentinelsatAPI(Api, ODataV4Search):
 
         # Download all products
         prod_ids = [prod.properties["uuid"] for prod in search_result.data]
-        success, _, _ = self.api.download_all(prod_ids, directory_path=self.config.outputs_prefix)
+        success, _, _ = self.api.download_all(
+            prod_ids, directory_path=self.config.outputs_prefix
+        )
 
         # Only extract the successfully downloaded products
         paths = [self.extract(prods) for prods in success.values()]
@@ -197,12 +197,10 @@ class SentinelsatAPI(Api, ODataV4Search):
             except KeyError as ex:
                 raise MisconfiguredError(ex) from ex
         else:
-            logger.debug('Sentinelsat API already initialized')
+            logger.debug("Sentinelsat API already initialized")
 
     def update_keyword(self, **kwargs):
-        """
-        Update keywords for SentinelSat API
-        """
+        """Update keywords for SentinelSat API."""
         product_type = kwargs.get("productType", None)
         provider_product_type = self.map_product_type(product_type, **kwargs)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
@@ -217,10 +215,10 @@ class SentinelsatAPI(Api, ODataV4Search):
                 k: v
                 for k, v in product_type_def_params.items()
                 if (
-                k not in keywords.keys()
-                and k in self.config.metadata_mapping.keys()
-                and isinstance(self.config.metadata_mapping[k], list)
-            )
+                    k not in keywords.keys()
+                    and k in self.config.metadata_mapping.keys()
+                    and isinstance(self.config.metadata_mapping[k], list)
+                )
             }
         )
         qp, qs = self.build_query_string(product_type, **keywords)
@@ -242,10 +240,14 @@ class SentinelsatAPI(Api, ODataV4Search):
         if "start" in qp:
             if "end" not in qp:
                 raise ValueError("Missing ending day")
-            qp["date"] = (datetime.fromisoformat(qp.pop("start")), datetime.fromisoformat(qp.pop("end")))
+
+            qp["date"] = (
+                datetime.fromisoformat(qp.pop("start")),
+                datetime.fromisoformat(qp.pop("end")),
+            )
 
         # Footprint
-        if "area" in qp and isinstance(qp["area"], list):
-            qp["area"] = qp["area"][0]
+        if "area" in qp:
+            qp["area"] = qp.pop("area").wkt
 
         return qp, provider_product_type
