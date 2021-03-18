@@ -18,7 +18,7 @@
 
 import os
 
-from setuptools import find_packages, setup
+from setuptools import setup, find_packages
 
 BASEDIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
@@ -34,8 +34,8 @@ setup(
     url="https://github.com/CS-SI/eodag-sentinelsat",
     license="GPLv3",
     entry_points={
-        "eodag.plugins.api": [
-            "SentinelsatAPI = eodag_sentinelsat.eodag_sentinelsat:SentinelsatAPI",
+        'eodag.plugins.api': [
+            'SentinelsatAPI = eodag_sentinelsat.eodag_sentinelsat:SentinelsatAPI',
         ]
     },
     packages=find_packages(),
@@ -49,8 +49,8 @@ setup(
         "dev": [
             "pre-commit",
             "tox",
-        ],
-    },
+        ]
+    }   
     project_urls={
         "Bug Tracker": "https://github.com/CS-SI/eodag-sentinelsat/issues/",
         "Documentation": "https://github.com/CS-SI/eodagsentinelsat/blob/master/README.rst",
@@ -70,6 +70,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: GIS",
     ],
-    package_data={"eodag_sentinelsat": ["*.yml"]},
-    include_package_data=True,
+    package_data={'eodag_sentinelsat': ['*.yml']},
+    include_package_data=True
 )
