@@ -18,7 +18,7 @@
 
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 BASEDIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
@@ -26,7 +26,7 @@ with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
 
 setup(
     name="eodag_sentinelsat",
-    version="0.2.0",
+    version="0.2.1",
     description="Sentinelsat plugin to EODAG (https://github.com/CS-SI/eodag)",
     long_description=readme,
     author="CS Systemes d'Information (CSSI)",
@@ -34,11 +34,11 @@ setup(
     url="https://github.com/CS-SI/eodag-sentinelsat",
     license="GPLv3",
     entry_points={
-        "eodag.plugins.api": [
-            "SentinelsatAPI = eodag_sentinelsat:SentinelsatAPI",
+        'eodag.plugins.api': [
+            'SentinelsatAPI = eodag_sentinelsat.eodag_sentinelsat:SentinelsatAPI',
         ]
     },
-    py_modules=["eodag_sentinelsat"],
+    packages=find_packages(),
     install_requires=[
         "sentinelsat",
     ],
@@ -49,8 +49,8 @@ setup(
         "dev": [
             "pre-commit",
             "tox",
-        ],
-    },
+        ]
+    }   
     project_urls={
         "Bug Tracker": "https://github.com/CS-SI/eodag-sentinelsat/issues/",
         "Documentation": "https://github.com/CS-SI/eodagsentinelsat/blob/master/README.rst",
@@ -70,4 +70,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: GIS",
     ],
+    package_data={'eodag_sentinelsat': ['*.yml']},
+    include_package_data=True
 )
