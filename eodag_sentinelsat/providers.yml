@@ -1,3 +1,4 @@
+
 ---
 !provider
 name: scihub
@@ -28,8 +29,11 @@ api: !plugin
               - '({metadata}:{{{metadata}}})'
     metadata_path: '$.*'
   metadata_mapping:
+    acquisitionType: '$.acquisitiontype'
     id: '$.uuid'
-    uuid: '$.uuid'
+    uuid:
+      - uuid
+      - '$.uuid'
     geometry:
       - area
       - '$.footprint'
@@ -42,11 +46,16 @@ api: !plugin
     platformSerialIdentifier: '$.platformserialidentifier'
     instrument: '$.instrumentname'
     processingLevel: '$.processinglevel'
-    title: '$.title'
-    keyword: '$.keywords'
+    title:
+      - title
+      - '$.title'
     abstract: '$.summary'
-    orbitNumber: '$.orbitnumber'
-    orbitDirection: '$.orbitdirection'
+    orbitNumber:
+      - orbitnumber
+      - '$.orbitnumber'
+    orbitDirection:
+      - orbitdirection
+      - '$.orbitdirection'
     cloudCover:
       - cloudcoverpercentage
       - '$.cloudcoverpercentage'
@@ -57,13 +66,25 @@ api: !plugin
       - end
       - '$.endposition'
     downloadLink: '$.link'
+    polarizationChannels:
+      - polarisationmode
+      - '$.polarisationmode'
+    sensorMode:
+      - sensoroperationalmode
+      - '$.sensoroperationalmode'
 
     # Additional metadata provided by the providers but that don't appear in the reference spec
     linkAlternative: '$.link_alternative'
     ingestionDate: '$.ingestiondate'
-    relativeOrbitNumber: '$.relativeorbitnumber'
-    gmlFootprint: '$.gmlfootprint'
-    format: '$.format'
+    relativeOrbitNumber:
+      - relativeorbitnumber
+      - '$.relativeorbitnumber'
+    gmlFootprint:
+      - gmlfootprint
+      - '$.gmlfootprint'
+    format:
+      - format
+      - '$.format'
     processingBaseline: '$.processingbaseline'
     filename:
       - filename
@@ -72,7 +93,9 @@ api: !plugin
     size: '$.size'
     s2DatatakeId: '$.s2datatakeid'
     platformIdentifier: '$.platformidentifier'
-    identifier: '$.identifier'
+    identifier:
+      - identifier
+      - '$.identifier'
     raw:
       - raw
       - '$.raw'
@@ -115,3 +138,38 @@ products:
   S3_LAN:
     productType: SR_2_LAN___
     platform: Sentinel-3
+
+# --- Available keywords: ---
+#'acquisitiontype': 'NOMINAL',
+#'beginposition': datetime.datetime(2017, 4, 25, 15, 56, 12, 814000), ===> replaced by date
+#'endposition': datetime.datetime(2017, 4, 25, 15, 56, 39, 758000), ===> replaced by date
+#'filename': 'S1A_IW_SLC__1SDV_20170425T155612_20170425T155639_016302_01AF91_46FF.SAFE',
+#'footprint': 'POLYGON ((34.322010 0.401648,36.540989 0.876987,36.884121 -0.747357,34.664474 -1.227940,34.322010 0.401648))', ===> replaced by area
+#'format': 'SAFE',
+#'gmlfootprint': '<gml:Polygon ... >'
+#'identifier': 'S1A_IW_SLC__1SDV_20170425T155612_20170425T155639_016302_01AF91_46FF',
+#'ingestiondate': datetime.datetime(2017, 4, 25, 19, 23, 45, 956000),
+#'instrumentname': 'Synthetic Aperture Radar (C-band)',
+#'instrumentshortname': 'SAR-C SAR',
+#'lastorbitnumber': 16302,
+#'lastrelativeorbitnumber': 130,
+#'link': "https://scihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/$value",
+#'link_alternative': "https://scihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/",
+#'link_icon': "https://scihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/Products('Quicklook')/$value",
+#'missiondatatakeid': 110481,
+#'orbitdirection': 'ASCENDING',
+#'orbitnumber': 16302,
+#'platformidentifier': '2014-016A',
+#'platformname': 'Sentinel-1',
+#'polarisationmode': 'VV VH',
+#'productclass': 'S',
+#'producttype': 'SLC',
+#'relativeorbitnumber': 130,
+#'sensoroperationalmode': 'IW',
+#'size': '7.1 GB',
+#'slicenumber': 8,
+#'status': 'ARCHIVED',
+#'summary': 'Date: 2017-04-25T15:56:12.814Z, Instrument: SAR-C SAR, Mode: VV VH, Satellite: Sentinel-1, Size: 7.1 GB',
+#'swathidentifier': 'IW1 IW2 IW3',
+#'title': 'S1A_IW_SLC__1SDV_20170425T155612_20170425T155639_016302_01AF91_46FF',
+#'uuid': '04548172-c64a-418f-8e83-7a4d148adf1e'
