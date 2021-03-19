@@ -11,7 +11,7 @@ It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.i
 Installation
 ============
 
-eodag-sentinelsat is on `PyPI <https://pypi.org/project/eodag-sentinelsat/>`_:
+eodag-sentinelsat is on `PyPI <https://pypi.org/project/eodag-sentinelsat/>`_::
 
     python -m pip install eodag-sentinelsat
 
