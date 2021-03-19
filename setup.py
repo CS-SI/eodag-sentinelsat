@@ -18,7 +18,7 @@
 
 import os
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 BASEDIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
@@ -33,23 +33,21 @@ setup(
     author_email="admin@geostorm.eu",
     url="https://github.com/CS-SI/eodag-sentinelsat",
     license="GPLv3",
-    entry_points={
-        "eodag.plugins.api": [
-            "SentinelsatAPI = eodag_sentinelsat:SentinelsatAPI",
-        ]
-    },
-    py_modules=["eodag_sentinelsat"],
+    packages=find_packages(),
     install_requires=[
         "sentinelsat",
+        "eodag >= 2.1.1",
     ],
     extras_require={
-        "standalone": [
-            "eodag >= 2.1.1",
-        ],
         "dev": [
             "pre-commit",
             "tox",
-        ],
+        ]
+    },
+    entry_points={
+        "eodag.plugins.api": [
+            "SentinelsatAPI = eodag_sentinelsat.eodag_sentinelsat:SentinelsatAPI",
+        ]
     },
     project_urls={
         "Bug Tracker": "https://github.com/CS-SI/eodag-sentinelsat/issues/",
