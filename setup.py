@@ -26,7 +26,7 @@ with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
 
 setup(
     name="eodag_sentinelsat",
-    version="0.2.0",
+    version="0.3.0",
     description="Sentinelsat plugin to EODAG (https://github.com/CS-SI/eodag)",
     long_description=readme,
     author="CS Systemes d'Information (CSSI)",
@@ -36,7 +36,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "sentinelsat",
-        "eodag >= 2.1.1",
+        "eodag >= 2.2.0",
     ],
     extras_require={
         "dev": [
