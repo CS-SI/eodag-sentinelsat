@@ -21,6 +21,7 @@ import logging
 import zipfile
 from datetime import datetime
 
+from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils import get_progress_callback
@@ -122,10 +123,18 @@ class SentinelsatAPI(Api, ODataV4Search):
         :param kwargs: Not used, just here for compatibility reasons
         :return: Downloaded product path
         """
-        # Init Sentinelsat API if needed (connect...)
-        prods = self.download_all(product, auth, progress_callback, **kwargs)
+        prods = self.download_all(
+            SearchResult(
+                [
+                    product,
+                ]
+            ),
+            auth,
+            progress_callback,
+            **kwargs
+        )
 
-        # Mange the case if nothing has been downloaded
+        # Manage the case if nothing has been downloaded
         return prods[0] if len(prods) > 0 else ""
 
     def download_all(self, search_result, auth=None, progress_callback=None, **kwargs) -> list:
