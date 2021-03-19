@@ -68,4 +68,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: GIS",
     ],
+    package_data={"eodag_sentinelsat": ["*.yml"]},
+    include_package_data=True,
 )
