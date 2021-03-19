@@ -11,16 +11,9 @@ It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.i
 Installation
 ============
 
-* If you already have a particular version of eodag installed on your system::
+eodag-sentinelsat is on `PyPI <https://pypi.org/project/eodag-sentinelsat/>`_:
 
     python -m pip install eodag-sentinelsat
-
-* If you don't have eodag installed and want it installed and knowing about sentinelsat plugin or if you want to
-  develop on this repository::
-
-    python -m pip install eodag-sentinelsat[standalone]
-
-  The standalone install will install eodag itself along the way
 
 
 Contribute
@@ -30,7 +23,7 @@ If you intend to contribute to eodag-sentinelsat source code::
 
     git clone https://github.com/CS-SI/eodag-sentinelsat.git
     cd eodag-sentinelsat
-    python -m pip install -e .[standalone,dev]
+    python -m pip install -e .[dev]
     pre-commit install
     tox
 
