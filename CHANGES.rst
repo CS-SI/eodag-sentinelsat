@@ -1,9 +1,10 @@
 Release history
 ---------------
 
-0.3.0 (2021-03-19)
+0.3.0 (2021-03-26)
 ++++++++++++++++++
 
+- Search using rounded coords in WKT geometries for shorter request URL
 - Package building updated to fix integration with eodag
 - Various minor fixes
 
