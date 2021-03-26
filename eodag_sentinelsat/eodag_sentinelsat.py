@@ -258,7 +258,7 @@ class SentinelsatAPI(Api, ODataV4Search):
             )
 
         # Footprint
-        if "area" in qp:
-            qp["area"] = qp.pop("area").wkt
+        if "area" in qp and isinstance(qp["area"], list):
+            qp["area"] = qp["area"][0]
 
         return qp, provider_product_type

@@ -1,3 +1,12 @@
+.. image:: https://badge.fury.io/py/eodag-sentinelsat.svg
+    :target: https://badge.fury.io/py/eodag-sentinelsat
+
+.. image:: https://img.shields.io/pypi/l/eodag-sentinelsat.svg
+    :target: https://pypi.org/project/eodag-sentinelsat/
+
+.. image:: https://img.shields.io/pypi/pyversions/eodag-sentinelsat.svg
+    :target: https://pypi.org/project/eodag-sentinelsat/
+
 eodag-sentinelsat
 =================
 
@@ -6,6 +15,11 @@ It's an `Api <https://eodag.readthedocs.io/en/latest/api.html#eodag.plugins.apis
 search and download EO products from catalogs implementing the
 `SciHub / Copernicus Open Access Hub interface <https://scihub.copernicus.eu/userguide/WebHome>`_.
 It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.io>`_, enabling it to be used on eodag.
+
+.. image:: https://eodag.readthedocs.io/en/latest/_static/eodag_bycs.png
+    :target: https://github.com/CS-SI/eodag
+
+|
 
 
 Installation
