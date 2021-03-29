@@ -21,6 +21,7 @@ import logging
 import zipfile
 from datetime import datetime
 
+from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils import get_progress_callback
@@ -105,11 +106,11 @@ class SentinelsatAPI(Api, ODataV4Search):
             except SentinelAPIError as ex:
                 # TODO: change it to ServerError when ssat 0.15 will be published !
                 """
-                SentinelAPIError -- the parent, catch-all exception.
-                    Only used when no other more specific exception can be applied.
+                SentinelAPIError -- the parent, catch-all exception. Only used when no other more specific exception
+                                    can be applied.
                 SentinelAPILTAError -- raised when retrieving a product from the Long Term Archive.
-                ServerError -- raised when the server responded in an unexpected manner,
-                    typically due to undergoing maintenance.
+                ServerError -- raised when the server responded in an unexpected manner, typically due to undergoing
+                               maintenance.
                 UnauthorizedError -- raised when attempting to retrieve a product with incorrect credentials.
                 QuerySyntaxError -- raised when the query string could not be parsed on the server side.
                 QueryLengthError -- raised when the query string length was excessively long.
@@ -130,8 +131,16 @@ class SentinelsatAPI(Api, ODataV4Search):
         :param kwargs: Not used, just here for compatibility reasons
         :return: Downloaded product path
         """
-        # Init Sentinelsat API if needed (connect...)
-        prods = self.download_all(product, auth, progress_callback, **kwargs)
+        prods = self.download_all(
+            SearchResult(
+                [
+                    product,
+                ]
+            ),
+            auth,
+            progress_callback,
+            **kwargs
+        )
 
         # Manage the case if nothing has been downloaded
         return prods[0] if len(prods) > 0 else ""
@@ -243,14 +252,13 @@ class SentinelsatAPI(Api, ODataV4Search):
         if "start" in qp:
             if "end" not in qp:
                 raise ValueError("Missing ending day")
-
             qp["date"] = (
                 datetime.fromisoformat(qp.pop("start")),
                 datetime.fromisoformat(qp.pop("end")),
             )
 
         # Footprint
-        if "area" in qp:
-            qp["area"] = qp.pop("area").wkt
+        if "area" in qp and isinstance(qp["area"], list):
+            qp["area"] = qp["area"][0]
 
         return qp, provider_product_type

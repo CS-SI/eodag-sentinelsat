@@ -35,7 +35,7 @@ api: !plugin
       - uuid
       - '$.uuid'
     geometry:
-      - area
+      - 'area={geometry#to_rounded_wkt}'
       - '$.footprint'
     productType:
       - producttype
