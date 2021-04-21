@@ -23,7 +23,7 @@ from datetime import datetime
 
 from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
-from eodag.plugins.search.qssearch import ODataV4Search
+from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.utils import get_progress_callback
 from eodag.utils.exceptions import MisconfiguredError, RequestError
 from sentinelsat import SentinelAPI, SentinelAPIError
@@ -31,7 +31,7 @@ from sentinelsat import SentinelAPI, SentinelAPIError
 logger = logging.getLogger("eodag.plugins.apis.sentinelsat")
 
 
-class SentinelsatAPI(Api, ODataV4Search):
+class SentinelsatAPI(Api, QueryStringSearch):
     """
     SentinelsatAPI plugin.
 
