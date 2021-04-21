@@ -128,7 +128,8 @@ class SentinelsatAPI(Api, ODataV4Search):
         :param product: (EOProduct) EOProduct
         :param auth: Not used, just here for compatibility reasons
         :param progress_callback: Not used, just here for compatibility reasons
-        :param kwargs: Not used, just here for compatibility reasons
+        :param kwargs: ``extract`` (bool) will override any other values defined in a configuration
+            file or with environment variables.
         :return: Downloaded product path
         """
         prods = self.download_all(
@@ -155,7 +156,8 @@ class SentinelsatAPI(Api, ODataV4Search):
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
         :param auth: Not used, just here for compatibility reasons
         :param progress_callback: Not used, just here for compatibility reasons
-        :param kwargs: Not used, just here for compatibility reasons
+        :param kwargs: ``extract`` (bool) will override any other values defined in a configuration
+            file or with environment variables.
         :return: List of downloaded products
         """
         # Init Sentinelsat API if needed (connect...)
@@ -168,18 +170,24 @@ class SentinelsatAPI(Api, ODataV4Search):
         )
 
         # Only extract the successfully downloaded products
-        paths = [self.extract(prods) for prods in success.values()]
+        paths = [self.extract(prods, **kwargs) for prods in success.values()]
         return paths
 
-    def extract(self, product_info: dict) -> str:
+    def extract(self, product_info: dict, **kwargs) -> str:
         """
         Extract products if needed.
 
         :param product_info: Product info
+        :param kwargs: ``extract`` (bool) will override any other values defined in a configuration
+            file or with environment variables.
         :return: Path (archive or extracted according to the config)
         """
         # Extract them if needed
-        if self.config.extract and product_info["path"].endswith(".zip"):
+        extract = kwargs.get("extract")
+        extract = (
+            extract if extract is not None else getattr(self.config, "extract", True)
+        )
+        if extract and product_info["path"].endswith(".zip"):
             logger.info("Extraction activated")
             with zipfile.ZipFile(product_info["path"], "r") as zfile:
                 fileinfos = zfile.infolist()
