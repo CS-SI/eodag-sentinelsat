@@ -17,6 +17,8 @@ api: !plugin
     next_page_query_obj: '{{"limit":{items_per_page},"offset":{skip}}}'
     next_page_url_tpl: '{url}/odata/v1/Products?{search}&$top={items_per_page}&$skip={skip}'
     total_items_nb_key_path: 'https://scihub.copernicus.eu/apihub/odata/v1/Products/$count'
+    # 2021/04/21: 100, as set by sentinelsat https://sentinelsat.readthedocs.io/en/stable/api_reference.html#sentinelsat.products.SentinelProductsAPI.page_size
+    max_items_per_page: 100
   results_entry: 'value'
   discover_metadata:
     auto_discovery: true
