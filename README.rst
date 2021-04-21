@@ -11,7 +11,7 @@ eodag-sentinelsat
 =================
 
 This is a repository for sentinelsat plugin to `EODAG <https://github.com/CS-SI/eodag>`_.
-It's an `Api <https://eodag.readthedocs.io/en/latest/api.html#eodag.plugins.apis.base.Api>`_ plugin that enables to
+It's an `Api <https://eodag.readthedocs.io/en/master/plugins_reference/api.html>`_ plugin that enables to
 search and download EO products from catalogs implementing the
 `SciHub / Copernicus Open Access Hub interface <https://scihub.copernicus.eu/userguide/WebHome>`_.
 It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.io>`_, enabling it to be used on eodag.
@@ -29,6 +29,54 @@ eodag-sentinelsat is on `PyPI <https://pypi.org/project/eodag-sentinelsat/>`_::
 
     python -m pip install eodag-sentinelsat
 
+Configuration
+=============
+
+1. Register to `Scihub <https://scihub.copernicus.eu/userguide/SelfRegistration>`_ to get the required credentials (username/password).
+
+2. Follow the guidelines provided in `EODAG's documentation <https://eodag.readthedocs.io/en/master/getting_started_guide/configure.html>`_
+   to configure the plugin. For instance, create a dedicated configuration file ``my_config.yml``:
+
+   .. code-block:: yaml
+
+      scihub:
+          priority: 2  # Must be higher than the other provider's priority
+          api:
+              credentials:
+                  username: "PLEASE_CHANGE_ME"  # Your own username
+                  password: "PLEASE_CHANGE_ME"  # Your own password
+
+Examples
+========
+
+Python API:
+
+.. code-block:: python
+
+   import eodag
+
+   dag = EODataAccessGateway("my_config.yml")
+
+   search_results, _ = dag.search(
+       productType="S2_MSI_L1C",
+       start="2021-03-01",
+       end="2021-03-31",
+       geom={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44}
+   )
+   product_paths = dag.download_all(search_results)
+
+CLI:
+
+.. code-block:: bash
+
+   eodag search \
+      --conf my_config.yml \
+      --productType S2_MSI_L1C \
+      --start 2018-01-01 \
+      --end 2018-01-31 \
+      --box 1 43 2 44 \
+      --storage my_search.geojson
+   eodag download --conf my_config.yml --search-results my_search.geojson
 
 Contribute
 ==========
@@ -42,20 +90,25 @@ If you intend to contribute to eodag-sentinelsat source code::
     tox
 
 
-LICENSE
+License
 =======
 
 eodag-sentinelsat is licensed under GPLv3.
 See LICENSE file for details.
 
+Contributors
+============
 
-AUTHORS
+New contributors to the project are listed below, we hope to see it growing fast!
+
+* @remi-braun
+
+Authors
 =======
 
-eodag-sentinelsat is developed by `CS GROUP - France <https://www.c-s.fr>`_.
+eodag-sentinelsat has been created by `CS GROUP - France <https://www.csgroup.eu/>`_.
 
-
-CREDITS
+Credits
 =======
 
 See NOTICE file.
