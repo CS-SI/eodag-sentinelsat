@@ -101,6 +101,7 @@ api: !plugin
       - '$.raw'
     # storageStatus: must be one of ONLINE, STAGING, OFFLINE
     storageStatus: '{$.storage_status#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+  extract: True
 products:
   S1_SAR_OCN:
     productType: OCN
