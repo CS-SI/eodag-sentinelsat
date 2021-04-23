@@ -55,9 +55,17 @@ class SentinelsatAPI(Api, QueryStringSearch):
         """
         Query for products.
 
-        :param product_type: (str) Product Type, not used, just here for compatibility reasons
+        :param page: The page number to retur (default: 1)
+        :type page: int
+        :param items_per_page: The number of results that must appear in one single
+                               page
+        :type items_per_page: int
+        :param count:  To trigger a count request (default: True)
+        :type count: bool
         :param kwargs: (dict) Metadata
-        :return: (list, int) List and number of queried products
+        :return: A collection of EO products matching the criteria and the total count of products
+                 available
+        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
         """
         eo_products = []
         product_type = kwargs.get("productType", None)
@@ -77,10 +85,18 @@ class SentinelsatAPI(Api, QueryStringSearch):
                 skip=items_per_page * (page - 1),
             )
             pagination_params = ast.literal_eval(pagination_params_str)
-            query_params.update(pagination_params)
 
             try:
+                # Count
+                if count:
+                    logger.info("Sending count request with `sentinelsat`")
+                    total_count = self.api.count(**query_params)
+                else:
+                    total_count = None
+
                 # Query
+                query_params.update(pagination_params)
+                logger.info("Sending query request with `sentinelsat`")
                 results = self.api.query(**query_params)
 
                 # Create the storage_status field
@@ -119,7 +135,7 @@ class SentinelsatAPI(Api, QueryStringSearch):
                 """
                 raise RequestError(ex) from ex
 
-        return eo_products, len(eo_products)
+        return eo_products, total_count
 
     def normalize_results(self, results, **kwargs):
         """Extend the base QueryStringSearch.normalize_results method.
