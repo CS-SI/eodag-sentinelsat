@@ -19,11 +19,11 @@
 import ast
 import logging
 import zipfile
-from datetime import datetime
+from datetime import date, datetime
 
 from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
-from eodag.plugins.search.qssearch import ODataV4Search
+from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.utils import get_progress_callback
 from eodag.utils.exceptions import MisconfiguredError, RequestError
 from sentinelsat import SentinelAPI, SentinelAPIError
@@ -31,7 +31,7 @@ from sentinelsat import SentinelAPI, SentinelAPIError
 logger = logging.getLogger("eodag.plugins.apis.sentinelsat")
 
 
-class SentinelsatAPI(Api, ODataV4Search):
+class SentinelsatAPI(Api, QueryStringSearch):
     """
     SentinelsatAPI plugin.
 
@@ -120,6 +120,18 @@ class SentinelsatAPI(Api, ODataV4Search):
                 raise RequestError(ex) from ex
 
         return eo_products, len(eo_products)
+
+    def normalize_results(self, results, **kwargs):
+        """Extend the base QueryStringSearch.normalize_results method.
+
+        Convert Python date/datetime objects returned by sentinelsat into their ISO format.
+        """
+        products = super().normalize_results(results, **kwargs)
+        for product in products:
+            for pname, pvalue in product.properties.items():
+                if isinstance(pvalue, (date, datetime)):
+                    product.properties[pname] = pvalue.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        return products
 
     def download(self, product, auth=None, progress_callback=None, **kwargs) -> str:
         """
