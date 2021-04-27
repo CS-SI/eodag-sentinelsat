@@ -42,6 +42,7 @@ setup(
         "dev": [
             "pre-commit",
             "tox",
+            "pytest",
         ]
     },
     entry_points={
