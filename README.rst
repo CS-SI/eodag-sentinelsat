@@ -11,12 +11,12 @@ eodag-sentinelsat
 =================
 
 This is a repository for sentinelsat plugin to `EODAG <https://github.com/CS-SI/eodag>`_.
-It's an `Api <https://eodag.readthedocs.io/en/master/plugins_reference/api.html>`_ plugin that enables to
+It's an `Api <https://eodag.readthedocs.io/en/master/plugins.html>`_ plugin that enables to
 search and download EO products from catalogs implementing the
 `SciHub / Copernicus Open Access Hub interface <https://scihub.copernicus.eu/userguide/WebHome>`_.
 It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.io>`_, enabling it to be used on eodag.
 
-.. image:: https://eodag.readthedocs.io/en/latest/_static/eodag_bycs.png
+.. image:: https://eodag.readthedocs.io/en/master/_static/eodag_bycs.png
     :target: https://github.com/CS-SI/eodag
 
 |
@@ -89,19 +89,11 @@ If you intend to contribute to eodag-sentinelsat source code::
     pre-commit install
     tox
 
-
 License
 =======
 
 eodag-sentinelsat is licensed under GPLv3.
 See LICENSE file for details.
-
-Contributors
-============
-
-New contributors to the project are listed below, we hope to see it growing fast!
-
-* @remi-braun
 
 Authors
 =======
