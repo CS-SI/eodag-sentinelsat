@@ -75,7 +75,7 @@ CLI:
       --end 2018-01-31 \
       --box 1 43 2 44 \
       --storage my_search.geojson
-   eodag download --conf my_config.yml --search-results my_search.geojson
+   eodag download --search-results my_search.geojson
 
 Contribute
 ==========
@@ -92,7 +92,7 @@ License
 =======
 
 eodag-sentinelsat is licensed under GPLv3.
-See LICENSE file for details.
+See `LICENSE <https://github.com/CS-SI/eodag-sentinelsat/blob/develop/LICENSE>`_ for details.
 
 Authors
 =======
