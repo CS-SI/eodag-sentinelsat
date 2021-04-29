@@ -11,12 +11,12 @@ eodag-sentinelsat
 =================
 
 This is a repository for sentinelsat plugin to `EODAG <https://github.com/CS-SI/eodag>`_.
-It's an `Api <https://eodag.readthedocs.io/en/master/plugins.html>`_ plugin that enables to
+It's an `Api <https://eodag.readthedocs.io/en/latest/plugins.html>`_ plugin that enables to
 search and download EO products from catalogs implementing the
 `SciHub / Copernicus Open Access Hub interface <https://scihub.copernicus.eu/userguide/WebHome>`_.
 It is basically a wrapper around `sentinelsat <https://sentinelsat.readthedocs.io>`_, enabling it to be used on eodag.
 
-.. image:: https://eodag.readthedocs.io/en/master/_static/eodag_bycs.png
+.. image:: https://eodag.readthedocs.io/en/latest/_static/eodag_bycs.png
     :target: https://github.com/CS-SI/eodag
 
 |
@@ -34,13 +34,13 @@ Configuration
 
 1. Register to `Scihub <https://scihub.copernicus.eu/userguide/SelfRegistration>`_ to get the required credentials (username/password).
 
-2. Follow the guidelines provided in `EODAG's documentation <https://eodag.readthedocs.io/en/master/getting_started_guide/configure.html>`_
-   to configure the plugin. For instance, create a dedicated configuration file ``my_config.yml``:
+2. Follow the guidelines provided in `EODAG's documentation <https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html>`_
+   to configure the plugin. You can create a dedicated configuration file or edit the default one ``~/.config/eodag/eodag.yml``:
 
    .. code-block:: yaml
 
       scihub:
-          priority: 2  # Must be higher than the other provider's priority
+          priority: 2  # Must be higher than the other providers' priorities
           api:
               credentials:
                   username: "PLEASE_CHANGE_ME"  # Your own username
@@ -55,7 +55,7 @@ Python API:
 
    import eodag
 
-   dag = EODataAccessGateway("my_config.yml")
+   dag = EODataAccessGateway()
 
    search_results, _ = dag.search(
        productType="S2_MSI_L1C",
@@ -70,7 +70,6 @@ CLI:
 .. code-block:: bash
 
    eodag search \
-      --conf my_config.yml \
       --productType S2_MSI_L1C \
       --start 2018-01-01 \
       --end 2018-01-31 \
