@@ -86,9 +86,24 @@ If you intend to contribute to eodag-sentinelsat source code::
     cd eodag-sentinelsat
     python -m pip install -e .[dev]
     pre-commit install
+
+We use ``pre-commit`` to run a suite of linters, formatters and pre-commit hooks (``black``, ``isort``, ``flake8``)
+to ensure the code base is homogeneously formatted and easier to read. It's important that you install
+it, since we run the exact same hooks in the Continuous Integration.
+
+To run the default test suite (which excludes end-to-end tests):
+
+.. code-block:: bash
+
     tox
 
-License
+To only run end-to-end test:
+
+.. code-block:: bash
+
+    tox -- tests/test_end_to_end.py
+
+LICENSE
 =======
 
 eodag-sentinelsat is licensed under GPLv3.

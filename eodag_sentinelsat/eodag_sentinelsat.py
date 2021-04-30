@@ -18,20 +18,38 @@
 
 import ast
 import logging
-import zipfile
+import shutil
 from datetime import date, datetime
 
 from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
+from eodag.plugins.download.base import Download
 from eodag.plugins.search.qssearch import QueryStringSearch
-from eodag.utils import get_progress_callback
+from eodag.utils import path_to_uri
 from eodag.utils.exceptions import MisconfiguredError, RequestError
 from sentinelsat import SentinelAPI, SentinelAPIError
 
 logger = logging.getLogger("eodag.plugins.apis.sentinelsat")
 
 
-class SentinelsatAPI(Api, QueryStringSearch):
+class _ProductManager(object):
+    """Manage product status before and after downloading it.
+
+    A simple class whose instance attributes are used to save and update the
+    product state after ``SentinelsatAPI._prepare_downloads`` and
+    ``SentinelsatAPI.download_all``
+    """
+
+    def __init__(self, uuid, product):
+        self.uuid = uuid  #  str
+        self.product = product  #  EOProduct
+        self.fs_path = None  #  str
+        self.record_filename = None  # str
+        self.to_download = None  # bool
+        self.downloaded_by_sentinelsat = None  # bool
+
+
+class SentinelsatAPI(Api, QueryStringSearch, Download):
     """
     SentinelsatAPI plugin.
 
@@ -74,7 +92,7 @@ class SentinelsatAPI(Api, QueryStringSearch):
             self._init_api()
 
             # Modify the query parameters to be compatible with Sentinelsat query
-            query_params, provider_product_type = self.update_keyword(**kwargs)
+            query_params, provider_product_type = self._update_keyword(**kwargs)
 
             # add pagination
             pagination_params_str = self.config.pagination.get(
@@ -104,7 +122,7 @@ class SentinelsatAPI(Api, QueryStringSearch):
                     res["storage_status"] = self.api.is_online(uuid)
 
                 # Normalize results skeletons (using providers.yml file)
-                eo_products = self.normalize_results(results.values(), **kwargs)
+                eo_products = self._normalize_results(results.values(), **kwargs)
 
             except TypeError:
                 import traceback as tb
@@ -137,7 +155,7 @@ class SentinelsatAPI(Api, QueryStringSearch):
 
         return eo_products, total_count
 
-    def normalize_results(self, results, **kwargs):
+    def _normalize_results(self, results, **kwargs):
         """Extend the base QueryStringSearch.normalize_results method.
 
         Convert Python date/datetime objects returned by sentinelsat into their ISO format.
@@ -149,6 +167,63 @@ class SentinelsatAPI(Api, QueryStringSearch):
                     product.properties[pname] = pvalue.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         return products
 
+    def _prepare_downloads(self, search_result, **kwargs):
+        """Prepare the downloads.
+
+        Create a product manager per product to download, that is responsible
+        for creating a file path and a record filename by calling
+        ``eodag.plugins.download.base.Download._prepare_download``,
+        which allows to check whether this product has already been downloaded or not.
+        """
+        prepared = []
+        for product in search_result:
+            pm = _ProductManager(uuid=product.properties["uuid"], product=product)
+            pm.fs_path, pm.record_filename = self._prepare_download(product, **kwargs)
+            # Do not try to download this product
+            if not pm.fs_path or not pm.record_filename:
+                if pm.fs_path:
+                    product.location = path_to_uri(pm.fs_path)
+                pm.to_download = False
+            else:
+                pm.to_download = True
+
+            prepared.append(pm)
+        return prepared
+
+    def _finalize_downloads(self, product_managers, **kwargs):
+        """Finalize the downloads.
+
+        Return the paths to the downloaded products. It:
+        * can return a path  of product that was already downloaded
+          (e.g. ``download_all`` was called on a list of products already partially
+          downloaded).
+        * By calling ``eodag.plugins.download.base.Download._prepare_download`` it
+          takes care of extracting the products if required.
+        * It also saves a record file by downloaded product to check later if it needs
+          to be downloaded again.
+        * It updates product.location
+        """
+        product_paths = []
+        for pm in product_managers:
+            # fs_path is obtained from _prepare_download which can return None
+            if pm.to_download is False and pm.fs_path is not None:
+                product_path = pm.fs_path
+            elif pm.downloaded_by_sentinelsat:
+                # Save the record file for this product, to detect later in another session
+                # if it has already been downloaded or not.
+                with open(pm.record_filename, "w") as fh:
+                    fh.write(pm.product.remote_location)
+                logger.debug("Download recorded in %s", pm.record_filename)
+                # Call _finalize to extract the product if required and return the right path.
+                product_path = self._finalize(pm.fs_path, **kwargs)
+                # Update the product.location to the product's filepath URI (file://...)
+                pm.product.location = path_to_uri(product_path)
+            else:
+                product_path = None
+            if product_path is not None:
+                product_paths.append(product_path)
+        return product_paths
+
     def download(self, product, auth=None, progress_callback=None, **kwargs) -> str:
         """
         Download product.
@@ -156,23 +231,20 @@ class SentinelsatAPI(Api, QueryStringSearch):
         :param product: (EOProduct) EOProduct
         :param auth: Not used, just here for compatibility reasons
         :param progress_callback: Not used, just here for compatibility reasons
-        :param kwargs: ``extract`` (bool) will override any other values defined in a configuration
-            file or with environment variables.
-        :return: Downloaded product path
+        :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
+                            here and will override any other values defined in a
+                            configuration file or with environment variables.
+                            ``checksum`` can be passed to ``sentinelsat.download_all`` directly
+                            which is used under the hood.
+        :returns: The absolute path to the downloaded product in the local filesystem
+        :rtype: str
         """
-        prods = self.download_all(
-            SearchResult(
-                [
-                    product,
-                ]
-            ),
-            auth,
-            progress_callback,
-            **kwargs
+        fs_paths = self.download_all(
+            SearchResult([product]), auth, progress_callback, **kwargs
         )
 
         # Manage the case if nothing has been downloaded
-        return prods[0] if len(prods) > 0 else ""
+        return fs_paths[0] if len(fs_paths) > 0 else ""
 
     def download_all(
         self, search_result, auth=None, progress_callback=None, **kwargs
@@ -184,53 +256,55 @@ class SentinelsatAPI(Api, QueryStringSearch):
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
         :param auth: Not used, just here for compatibility reasons
         :param progress_callback: Not used, just here for compatibility reasons
-        :param kwargs: ``extract`` (bool) will override any other values defined in a configuration
-            file or with environment variables.
-        :return: List of downloaded products
+        :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
+                            here and will override any other values defined in a
+                            configuration file or with environment variables.
+                            ``checksum``, ``max_attempts``, ``n_concurrent_dl`` and
+                            ``lta_retry_delay`` can be passed to ``sentinelsat.download_all``
+                            directly.
+        :return: A collection of absolute paths to the downloaded products
+        :rtype: list
         """
         # Init Sentinelsat API if needed (connect...)
         self._init_api()
 
-        # Download all products
-        prod_ids = [prod.properties["uuid"] for prod in search_result.data]
-        success, _, _ = self.api.download_all(
-            prod_ids, directory_path=self.config.outputs_prefix
-        )
+        product_managers = self._prepare_downloads(search_result, **kwargs)
+        uuids_to_download = [pm.uuid for pm in product_managers if pm.to_download]
+        if uuids_to_download:
+            outputs_prefix = kwargs.get("outputs_prefix") or self.config.outputs_prefix
+            sentinelsat_kwargs = {
+                k: kwargs.pop(k)
+                for k in list(kwargs)
+                if k
+                in ["checksum", "max_attempts", "n_concurrent_dl", "lta_retry_delay"]
+            }
+            # Download all products
+            # Three dicts returned by sentinelsat.download_all, their key is the uuid:
+            #  1. Product information from get_product_info() as well as the path on disk.
+            # 2. Product information for products successfully triggered for retrieval
+            # from the long term archive but not downloaded.
+            # 3. Product information of products where either downloading or triggering failed
+            success, _, _ = self.api.download_all(
+                uuids_to_download, directory_path=outputs_prefix, **sentinelsat_kwargs
+            )
 
-        # Only extract the successfully downloaded products
-        paths = [self.extract(prods, **kwargs) for prods in success.values()]
+            for pm in product_managers:
+                if pm.uuid in success:
+                    pm.downloaded_by_sentinelsat = True
+                    # EODAG and sentinelsat may have different ways of determining the download
+                    # file name. The logic below makes sure that EODAG's way is applied.
+                    sentinelsat_path = success[pm.uuid]["path"]
+                    if sentinelsat_path != pm.fs_path:
+                        logger.debug(
+                            "sentinelsat product path (%s) is different from EODAG's (%s),"
+                            "file or directory moved to EODAG's path.",
+                            sentinelsat_path,
+                            pm.fs_path,
+                        )
+                        shutil.move(sentinelsat_path, pm.fs_path)
+
+        paths = self._finalize_downloads(product_managers, **kwargs)
         return paths
-
-    def extract(self, product_info: dict, **kwargs) -> str:
-        """
-        Extract products if needed.
-
-        :param product_info: Product info
-        :param kwargs: ``extract`` (bool) will override any other values defined in a configuration
-            file or with environment variables.
-        :return: Path (archive or extracted according to the config)
-        """
-        # Extract them if needed
-        extract = kwargs.get("extract")
-        extract = (
-            extract if extract is not None else getattr(self.config, "extract", True)
-        )
-        if extract and product_info["path"].endswith(".zip"):
-            logger.info("Extraction activated")
-            with zipfile.ZipFile(product_info["path"], "r") as zfile:
-                fileinfos = zfile.infolist()
-                with get_progress_callback() as bar:
-                    bar.max_size = len(fileinfos)
-                    bar.unit = "file"
-                    bar.desc = "Extracting files from {}".format(product_info["path"])
-                    bar.unit_scale = False
-                    bar.position = 2
-                    for fileinfo in fileinfos:
-                        zfile.extract(fileinfo, path=self.config.outputs_prefix)
-                        bar(1)
-            return product_info["path"][: product_info["path"].index(".zip")]
-        else:
-            return product_info["path"]
 
     def _init_api(self) -> None:
         """Initialize Sentinelsat API if needed (connection and link)."""
@@ -247,7 +321,7 @@ class SentinelsatAPI(Api, QueryStringSearch):
         else:
             logger.debug("Sentinelsat API already initialized")
 
-    def update_keyword(self, **kwargs):
+    def _update_keyword(self, **kwargs):
         """Update keywords for SentinelSat API."""
         product_type = kwargs.get("productType", None)
         provider_product_type = self.map_product_type(product_type, **kwargs)

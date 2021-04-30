@@ -94,9 +94,6 @@ ENV/
 
 # All kind of user files (mostly configuration files with passwords)
 *.user.yml*
-docs/tutorials/eodag_workspace/search_results.geojson
-docs/tutorials/eodag_workspace/.downloaded
-examples/eodag_workspace
 tests/resources/user_conf.yml
 search_results.geojson
 
