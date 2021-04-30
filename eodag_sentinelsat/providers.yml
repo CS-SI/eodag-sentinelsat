@@ -5,7 +5,7 @@ name: scihub
 priority: 0
 api: !plugin
   type: SentinelsatAPI
-  endpoint: 'https://scihub.copernicus.eu/apihub/'
+  endpoint: 'https://apihub.copernicus.eu/apihub/'
   dont_quote:
     - '['
     - ']'
@@ -16,7 +16,7 @@ api: !plugin
   pagination:
     next_page_query_obj: '{{"limit":{items_per_page},"offset":{skip}}}'
     next_page_url_tpl: '{url}/odata/v1/Products?{search}&$top={items_per_page}&$skip={skip}'
-    total_items_nb_key_path: 'https://scihub.copernicus.eu/apihub/odata/v1/Products/$count'
+    total_items_nb_key_path: 'https://apihub.copernicus.eu/apihub//odata/v1/Products/$count'
     # 2021/04/21: 100, as set by sentinelsat https://sentinelsat.readthedocs.io/en/stable/api_reference.html#sentinelsat.products.SentinelProductsAPI.page_size
     max_items_per_page: 100
   results_entry: 'value'
@@ -156,9 +156,9 @@ products:
 #'instrumentshortname': 'SAR-C SAR',
 #'lastorbitnumber': 16302,
 #'lastrelativeorbitnumber': 130,
-#'link': "https://scihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/$value",
-#'link_alternative': "https://scihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/",
-#'link_icon': "https://scihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/Products('Quicklook')/$value",
+#'link': "https://apihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/$value",
+#'link_alternative': "https://apihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/",
+#'link_icon': "https://apihub.copernicus.eu/apihub/odata/v1/Products('04548172-c64a-418f-8e83-7a4d148adf1e')/Products('Quicklook')/$value",
 #'missiondatatakeid': 110481,
 #'orbitdirection': 'ASCENDING',
 #'orbitnumber': 16302,
