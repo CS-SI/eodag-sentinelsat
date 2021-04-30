@@ -32,26 +32,24 @@ from sentinelsat import SentinelAPI, SentinelAPIError
 logger = logging.getLogger("eodag.plugins.apis.sentinelsat")
 
 
-class _ProductManager(Download):
+class _ProductManager(object):
     """Manage product status before and after downloading it.
 
-    A simple class that inherits from ``eodag.plugins.download.base.Download`` to
-    reuse ``_prepare_download`` and ``_finalize``. The instance attributes are used
-    to save and update the product state after ``SentinelsatAPI._prepare_downloads`` and
+    A simple class whose instance attributes are used to save and update the
+    product state after ``SentinelsatAPI._prepare_downloads`` and
     ``SentinelsatAPI.download_all``
     """
 
-    def __init__(self, uuid, product, config):
+    def __init__(self, uuid, product):
         self.uuid = uuid  #  str
         self.product = product  #  EOProduct
-        self.config = config  # Plugin config
         self.fs_path = None  #  str
         self.record_filename = None  # str
         self.to_download = None  # bool
         self.downloaded_by_sentinelsat = None  # bool
 
 
-class SentinelsatAPI(Api, QueryStringSearch):
+class SentinelsatAPI(Api, QueryStringSearch, Download):
     """
     SentinelsatAPI plugin.
 
@@ -179,10 +177,8 @@ class SentinelsatAPI(Api, QueryStringSearch):
         """
         prepared = []
         for product in search_result:
-            pm = _ProductManager(
-                uuid=product.properties["uuid"], product=product, config=self.config
-            )
-            pm.fs_path, pm.record_filename = pm._prepare_download(product, **kwargs)
+            pm = _ProductManager(uuid=product.properties["uuid"], product=product)
+            pm.fs_path, pm.record_filename = self._prepare_download(product, **kwargs)
             # Do not try to download this product
             if not pm.fs_path or not pm.record_filename:
                 if pm.fs_path:
@@ -219,7 +215,7 @@ class SentinelsatAPI(Api, QueryStringSearch):
                     fh.write(pm.product.remote_location)
                 logger.debug("Download recorded in %s", pm.record_filename)
                 # Call _finalize to extract the product if required and return the right path.
-                product_path = pm._finalize(pm.fs_path, **kwargs)
+                product_path = self._finalize(pm.fs_path, **kwargs)
                 # Update the product.location to the product's filepath URI (file://...)
                 pm.product.location = path_to_uri(product_path)
             else:
