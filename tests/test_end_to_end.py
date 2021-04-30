@@ -12,17 +12,8 @@ from eodag.utils import uri_to_path
 
 
 @pytest.fixture
-def user_conf():
-    # There MUST be a user conf file in the test resources folder named user_conf.yml
-    user_conf = Path(__file__).parent / "resources" / "user_conf.yml"
-    if not user_conf.exists():
-        raise ValueError("Missing tests/resources/user_conf.yml file to run the tests")
-    yield str(user_conf)
-
-
-@pytest.fixture
-def dag(user_conf, download_dir):
-    dag = EODataAccessGateway(user_conf_file_path=user_conf)
+def dag(download_dir):
+    dag = EODataAccessGateway()
     dag.set_preferred_provider("scihub")
     dag.providers_config["scihub"].api.outputs_prefix = str(download_dir)
 
@@ -49,6 +40,7 @@ def test_end_to_end_complete_scihub(dag, download_dir):
         geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
         items_per_page=100,
     )
+    assert len(search_results) > 0
     prods_sorted_by_size = SearchResult(
         sorted(search_results, key=lambda p: float(p.properties["size"].split()[0]))
     )
