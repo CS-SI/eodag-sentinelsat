@@ -21,6 +21,7 @@ import logging
 import shutil
 from datetime import date, datetime
 
+from dateutil.parser import isoparse
 from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import Download
@@ -363,8 +364,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             if "end" not in qp:
                 raise ValueError("Missing ending day")
             qp["date"] = (
-                datetime.fromisoformat(qp.pop("start")),
-                datetime.fromisoformat(qp.pop("end")),
+                isoparse(qp.pop("start")),
+                isoparse(qp.pop("end")),
             )
 
         # Footprint
