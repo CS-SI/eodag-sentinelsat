@@ -38,6 +38,7 @@ setup(
         "sentinelsat",
         # Use EODAG develop branch from EODAG-sentinelsat develop branch
         "eodag @ git+https://github.com/CS-SI/eodag.git@develop",
+        "python-dateutil",
     ],
     extras_require={
         "dev": [
