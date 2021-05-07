@@ -36,7 +36,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         "sentinelsat",
-        "eodag >= 2.2.0",
+        # Use EODAG develop branch from EODAG-sentinelsat develop branch
+        "eodag @ git+https://github.com/CS-SI/eodag.git@develop",
+        "python-dateutil",
     ],
     extras_require={
         "dev": [
