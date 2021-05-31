@@ -2,9 +2,10 @@ import datetime
 
 import pytest
 import shapely.wkt
-from eodag import EODataAccessGateway
+from eodag import EODataAccessGateway, setup_logging
 from eodag.config import load_default_config
 from eodag.plugins.manager import PluginManager
+from eodag.utils import ProgressCallback
 
 
 @pytest.fixture
@@ -66,3 +67,17 @@ def test_update_keyword(dag, plugin_api):
         parameters["platformname"]
         == dag.providers_config["scihub"].products["S2_MSI_L1C"]["platform"]
     )
+
+
+@pytest.mark.usefixtures("logging_info")
+def test_progress_bar(plugin_api):
+    """Check that eodag progress bar settings are correctly passed to sentinelsat"""
+
+    plugin_api.config.credentials = {"username": "", "password": ""}
+    plugin_api._init_api()
+
+    assert isinstance(plugin_api.api._tqdm(), ProgressCallback)
+    assert plugin_api.api._tqdm().disable is False
+
+    setup_logging(2, no_progress_bar=True)
+    assert plugin_api.api._tqdm().disable is True

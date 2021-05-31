@@ -3,12 +3,14 @@ import hashlib
 import os
 import shutil
 import time
+from contextlib import closing
+from io import StringIO
 from pathlib import Path
 
 import pytest
-from eodag import EODataAccessGateway
+from eodag import EODataAccessGateway, setup_logging
 from eodag.api.search_result import SearchResult
-from eodag.utils import uri_to_path
+from eodag.utils import ProgressCallback, uri_to_path
 
 
 @pytest.fixture
@@ -58,8 +60,16 @@ def test_end_to_end_complete_scihub(dag, download_dir):
     # The expected product's archive filename is based on the product's title
     expected_product_name = f"{product.properties['title']}.zip"
 
-    # Download the product, but DON'T extract it
-    archive_file_path = dag.download(product, extract=False)
+    with closing(StringIO()) as tqdm_out:
+        with ProgressCallback(file=tqdm_out, disable=True) as bar:
+
+            # Download the product, but DON'T extract it
+            archive_file_path = dag.download(
+                product, extract=False, progress_callback=bar
+            )
+
+        # progress bar must have been muted
+        assert tqdm_out.getvalue() == ""
 
     # The archive must have been downloaded
     assert os.path.isfile(archive_file_path)
@@ -93,7 +103,15 @@ def test_end_to_end_complete_scihub(dag, download_dir):
     previous_archive_file_path = archive_file_path
     previous_location = product.location
     start_time = time.time()
-    archive_file_path = dag.download(product, extract=False)
+    with closing(StringIO()) as tqdm_out:
+        setup_logging(verbose=2, no_progress_bar=True)
+        with ProgressCallback(file=tqdm_out) as bar:
+            archive_file_path = dag.download(
+                product, extract=False, progress_callback=bar
+            )
+        setup_logging(verbose=2, no_progress_bar=False)
+        # progress bar must have been muted
+        assert tqdm_out.getvalue() == ""
     end_time = time.time()
     assert (end_time - start_time) < 2  # Should be really fast (< 2s)
     # The paths should be the same as before
@@ -121,7 +139,11 @@ def test_end_to_end_complete_scihub(dag, download_dir):
     # download it, if its location points to the remote location.
     # The product should be automatically extracted.
     product.location = product.remote_location
-    product_dir_path = dag.download(product)
+    with closing(StringIO()) as tqdm_out:
+        with ProgressCallback(file=tqdm_out) as bar:
+            product_dir_path = dag.download(product, progress_callback=bar)
+        # progress bar must be enabled and contain product id
+        assert product.properties["id"] in tqdm_out.getvalue()
 
     product_dir_path = Path(product_dir_path)
 
