@@ -17,7 +17,7 @@
 """Sentinelsat plugin to EODAG."""
 
 import ast
-import logging
+import logging as py_logging
 import shutil
 from datetime import date, datetime
 
@@ -26,11 +26,13 @@ from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.qssearch import QueryStringSearch
+from eodag.utils import ProgressCallback
+from eodag.utils import logging as eodag_logging
 from eodag.utils import path_to_uri
 from eodag.utils.exceptions import MisconfiguredError, RequestError
 from sentinelsat import SentinelAPI, SentinelAPIError
 
-logger = logging.getLogger("eodag.plugins.apis.sentinelsat")
+logger = py_logging.getLogger("eodag.plugins.apis.sentinelsat")
 
 
 class _ProductManager(object):
@@ -271,6 +273,20 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
 
         product_managers = self._prepare_downloads(search_result, **kwargs)
         uuids_to_download = [pm.uuid for pm in product_managers if pm.to_download]
+
+        # If a progress_callback is passed, use its disable attribute.
+        # First, backup logging settings, then change them temporally to disable/enable progress bars
+        eodag_logging_verbose = eodag_logging.get_logging_verbose()
+        eodag_logging_disable_tqdm = eodag_logging.disable_tqdm
+        if progress_callback is not None:
+            no_progress_bar = getattr(progress_callback, "disable", False)
+            if eodag_logging_verbose is None:
+                # no logging but still displays progress bars by default
+                eodag_logging_verbose = 1
+            eodag_logging.setup_logging(
+                verbose=eodag_logging_verbose, no_progress_bar=no_progress_bar
+            )
+
         if uuids_to_download:
             outputs_prefix = kwargs.get("outputs_prefix") or self.config.outputs_prefix
             sentinelsat_kwargs = {
@@ -304,6 +320,13 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                         )
                         shutil.move(sentinelsat_path, pm.fs_path)
 
+        # restore logging settings
+        if eodag_logging_verbose is not None:
+            eodag_logging.setup_logging(
+                verbose=eodag_logging_verbose,
+                no_progress_bar=eodag_logging_disable_tqdm,
+            )
+
         paths = self._finalize_downloads(product_managers, **kwargs)
         return paths
 
@@ -317,6 +340,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                     self.config.credentials["password"],
                     self.config.endpoint,
                 )
+                # Use eodag progress bar which can be globally disabled
+                self.api._tqdm = ProgressCallback
             except KeyError as ex:
                 raise MisconfiguredError(ex) from ex
         else:
