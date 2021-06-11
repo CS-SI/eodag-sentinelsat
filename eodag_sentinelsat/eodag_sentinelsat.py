@@ -336,8 +336,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             try:
                 logger.debug("Initializing Sentinelsat API")
                 self.api = SentinelAPI(
-                    self.config.credentials["username"],
-                    self.config.credentials["password"],
+                    getattr(self.config, "credentials", {}).get("username", ""),
+                    getattr(self.config, "credentials", {}).get("password", ""),
                     self.config.endpoint,
                 )
                 # Use eodag progress bar which can be globally disabled
