@@ -89,15 +89,15 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
         """
         eo_products = []
-        product_type = kwargs.get("productType", None)
-        if product_type is not None:
-            # Init Sentinelsat API (connect...)
-            self._init_api()
 
-            # Modify the query parameters to be compatible with Sentinelsat query
-            query_params, provider_product_type = self._update_keyword(**kwargs)
+        # Init Sentinelsat API (connect...)
+        self._init_api()
 
-            # add pagination
+        # Modify the query parameters to be compatible with Sentinelsat query
+        query_params, provider_product_type = self._update_keyword(**kwargs)
+
+        # add pagination
+        try:
             pagination_params_str = self.config.pagination.get(
                 "next_page_query_obj", {}
             ).format(
@@ -106,55 +106,57 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                 skip=items_per_page * (page - 1),
             )
             pagination_params = ast.literal_eval(pagination_params_str)
+        except TypeError:
+            pagination_params = {}
 
-            try:
-                # Count
-                if count:
-                    logger.info("Sending count request with `sentinelsat`")
-                    total_count = self.api.count(**query_params)
-                else:
-                    total_count = None
+        try:
+            # Count
+            if count:
+                logger.info("Sending count request with `sentinelsat`")
+                total_count = self.api.count(**query_params)
+            else:
+                total_count = None
 
-                # Query
-                query_params.update(pagination_params)
-                logger.info("Sending query request with `sentinelsat`")
-                results = self.api.query(**query_params)
+            # Query
+            query_params.update(pagination_params)
+            logger.info("Sending query request with `sentinelsat`")
+            results = self.api.query(**query_params)
 
-                # Create the storage_status field
-                for uuid, res in results.items():
-                    res["storage_status"] = self.api.is_online(uuid)
+            # Create the storage_status field
+            for uuid, res in results.items():
+                res["storage_status"] = self.api.is_online(uuid)
 
-                # Normalize results skeletons (using providers.yml file)
-                eo_products = self._normalize_results(results.values(), **kwargs)
+            # Normalize results skeletons (using providers.yml file)
+            eo_products = self._normalize_results(results.values(), **kwargs)
 
-            except TypeError:
-                import traceback as tb
+        except TypeError:
+            import traceback as tb
 
-                # Sentinelsat api query method raises a TypeError for finding None in the json feed received
-                # as a response from the sentinel server, when looking for 'opensearch:totalResults' key.
-                # This may be interpreted as the the api not finding any result from the query.
-                # This is what is assumed here.
-                logger.debug(
-                    "Something went wrong during the query with self.api api:\n %s",
-                    tb.format_exc(),
-                )
-                logger.info("No results found !")
+            # Sentinelsat api query method raises a TypeError for finding None in the json feed received
+            # as a response from the sentinel server, when looking for 'opensearch:totalResults' key.
+            # This may be interpreted as the the api not finding any result from the query.
+            # This is what is assumed here.
+            logger.debug(
+                "Something went wrong during the query with self.api api:\n %s",
+                tb.format_exc(),
+            )
+            logger.info("No results found !")
 
-            except SentinelAPIError as ex:
-                # TODO: change it to ServerError when ssat 0.15 will be published !
-                """
-                SentinelAPIError -- the parent, catch-all exception. Only used when no other more specific exception
-                                    can be applied.
-                SentinelAPILTAError -- raised when retrieving a product from the Long Term Archive.
-                ServerError -- raised when the server responded in an unexpected manner, typically due to undergoing
-                               maintenance.
-                UnauthorizedError -- raised when attempting to retrieve a product with incorrect credentials.
-                QuerySyntaxError -- raised when the query string could not be parsed on the server side.
-                QueryLengthError -- raised when the query string length was excessively long.
-                InvalidKeyError -- raised when product with given key was not found on the server.
-                InvalidChecksumError -- MD5 checksum of a local file does not match the one from the server.
-                """
-                raise RequestError(ex) from ex
+        except SentinelAPIError as ex:
+            # TODO: change it to ServerError when ssat 0.15 will be published !
+            """
+            SentinelAPIError -- the parent, catch-all exception. Only used when no other more specific exception
+                                can be applied.
+            SentinelAPILTAError -- raised when retrieving a product from the Long Term Archive.
+            ServerError -- raised when the server responded in an unexpected manner, typically due to undergoing
+                            maintenance.
+            UnauthorizedError -- raised when attempting to retrieve a product with incorrect credentials.
+            QuerySyntaxError -- raised when the query string could not be parsed on the server side.
+            QueryLengthError -- raised when the query string length was excessively long.
+            InvalidKeyError -- raised when product with given key was not found on the server.
+            InvalidChecksumError -- MD5 checksum of a local file does not match the one from the server.
+            """
+            raise RequestError(ex) from ex
 
         return eo_products, total_count
 
@@ -247,7 +249,7 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         )
 
         # Manage the case if nothing has been downloaded
-        return fs_paths[0] if len(fs_paths) > 0 else ""
+        return fs_paths[0] if len(fs_paths) > 0 else None
 
     def download_all(
         self, search_result, auth=None, progress_callback=None, **kwargs
@@ -396,5 +398,9 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         # Footprint
         if "area" in qp and isinstance(qp["area"], list):
             qp["area"] = qp["area"][0]
+
+        # id
+        if "filename" in qp:
+            qp["filename"] = "%s*" % qp["filename"]
 
         return qp, provider_product_type

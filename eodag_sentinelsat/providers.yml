@@ -32,7 +32,9 @@ api: !plugin
     metadata_path: '$.*'
   metadata_mapping:
     acquisitionType: '$.acquisitiontype'
-    id: '$.uuid'
+    id:
+      - filename
+      - '$.identifier'
     uuid:
       - uuid
       - '$.uuid'
@@ -48,9 +50,7 @@ api: !plugin
     platformSerialIdentifier: '$.platformserialidentifier'
     instrument: '$.instrumentname'
     processingLevel: '$.processinglevel'
-    title:
-      - title
-      - '$.title'
+    title: '$.title'
     abstract: '$.summary'
     orbitNumber:
       - orbitnumber
@@ -58,6 +58,9 @@ api: !plugin
     orbitDirection:
       - orbitdirection
       - '$.orbitdirection'
+    swathIdentifier:
+      - swathIdentifier
+      - '$.swathIdentifier'
     cloudCover:
       - cloudcoverpercentage
       - '$.cloudcoverpercentage'
