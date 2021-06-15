@@ -32,7 +32,9 @@ api: !plugin
     metadata_path: '$.*'
   metadata_mapping:
     acquisitionType: '$.acquisitiontype'
-    id: '$.uuid'
+    id:
+      - filename
+      - '$.identifier'
     uuid:
       - uuid
       - '$.uuid'
