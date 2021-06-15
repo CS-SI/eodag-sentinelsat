@@ -16,13 +16,13 @@ def download_dir():
 
 @pytest.fixture
 def logging_info():
-    setup_logging(1)
+    setup_logging(2)
     yield
-    setup_logging(0)
+    setup_logging(1)
 
 
 @pytest.fixture
 def logging_debug():
     setup_logging(3)
     yield
-    setup_logging(0)
+    setup_logging(1)
