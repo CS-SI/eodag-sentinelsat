@@ -24,13 +24,23 @@ from datetime import date, datetime
 from dateutil.parser import isoparse
 from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import Download
+from eodag.plugins.download.base import (
+    DEFAULT_DOWNLOAD_TIMEOUT,
+    DEFAULT_DOWNLOAD_WAIT,
+    Download,
+)
 from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.utils import ProgressCallback
 from eodag.utils import logging as eodag_logging
 from eodag.utils import path_to_uri
-from eodag.utils.exceptions import MisconfiguredError, RequestError
-from sentinelsat import SentinelAPI, SentinelAPIError
+from eodag.utils.exceptions import (
+    MisconfiguredError,
+    NotAvailableError,
+    RequestError,
+)
+from eodag.utils.notebook import NotebookWidgets
+from sentinelsat import SentinelAPI, ServerError
+from tenacity import retry, retry_if_not_result, stop_after_delay
 
 logger = py_logging.getLogger("eodag.plugins.apis.sentinelsat")
 
@@ -142,8 +152,7 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             )
             logger.info("No results found !")
 
-        except SentinelAPIError as ex:
-            # TODO: change it to ServerError when ssat 0.15 will be published !
+        except ServerError as ex:
             """
             SentinelAPIError -- the parent, catch-all exception. Only used when no other more specific exception
                                 can be applied.
@@ -229,13 +238,26 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                 product_paths.append(product_path)
         return product_paths
 
-    def download(self, product, auth=None, progress_callback=None, **kwargs) -> str:
+    def download(
+        self,
+        product,
+        auth=None,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
+    ) -> str:
         """
         Download product.
 
         :param product: (EOProduct) EOProduct
         :param auth: Not used, just here for compatibility reasons
         :param progress_callback: Not used, just here for compatibility reasons
+        :param wait: If download fails, wait time in minutes between two download tries
+        :type wait: int, optional
+        :param timeout: If download fails, maximum time in minutes before stop retrying
+            to download
+        :type timeout: int, optional
         :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
                             here and will override any other values defined in a
                             configuration file or with environment variables.
@@ -245,14 +267,30 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :rtype: str
         """
         fs_paths = self.download_all(
-            SearchResult([product]), auth, progress_callback, **kwargs
+            SearchResult([product]),
+            auth=auth,
+            progress_callback=progress_callback,
+            wait=wait,
+            timeout=timeout,
+            **kwargs
         )
 
-        # Manage the case if nothing has been downloaded
-        return fs_paths[0] if len(fs_paths) > 0 else None
+        if len(fs_paths) > 0:
+            return fs_paths[0]
+        else:
+            raise NotAvailableError(
+                "%s is not available (%s) and could not be downloaded, timeout reached"
+                % (product.properties["title"], product.properties["storageStatus"])
+            )
 
     def download_all(
-        self, search_result, auth=None, progress_callback=None, **kwargs
+        self,
+        search_result,
+        auth=None,
+        progress_callback=None,
+        wait=DEFAULT_DOWNLOAD_WAIT,
+        timeout=DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs
     ) -> list:
         """
         Download all products.
@@ -261,6 +299,11 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :type search_result: :class:`~eodag.api.search_result.SearchResult`
         :param auth: Not used, just here for compatibility reasons
         :param progress_callback: Not used, just here for compatibility reasons
+        :param wait: If download fails, wait time in minutes between two download tries
+        :type wait: int, optional
+        :param timeout: If download fails, maximum time in minutes before stop retrying
+            to download
+        :type timeout: int, optional
         :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
                             here and will override any other values defined in a
                             configuration file or with environment variables.
@@ -299,12 +342,76 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             }
             # Download all products
             # Three dicts returned by sentinelsat.download_all, their key is the uuid:
-            #  1. Product information from get_product_info() as well as the path on disk.
+            # 1. Product information from get_product_info() as well as the path on disk.
             # 2. Product information for products successfully triggered for retrieval
             # from the long term archive but not downloaded.
             # 3. Product information of products where either downloading or triggering failed
-            success, _, _ = self.api.download_all(
-                uuids_to_download, directory_path=outputs_prefix, **sentinelsat_kwargs
+
+            # another output for notebooks
+            nb_info = NotebookWidgets()
+
+            def _are_products_missing(results):
+                """Check if some products have not been downloaded yet, for ``tenacity`` usage."""
+                success, ordered, failed = results
+                if len(ordered) > 0 or len(failed) > 0:
+                    return False
+                else:
+                    return True
+
+            def _wait_callback(retry_state):
+                """Callback executed after each download attempt failure, for ``tenacity`` usage.
+
+                :returns: wait time before next try (in seconds)
+                """
+                retry_info = (
+                    "[Retry #%s] Waiting %ss until next download try (retry every %s' for %s')"
+                    % (retry_state.attempt_number, wait * 60, wait, timeout)
+                )
+                logger.info(retry_info)
+                nb_info.display_html(retry_info)
+
+                return wait * 60
+
+            def _return_last_value(retry_state):
+                """Return the result of the last call attempt, for ``tenacity`` usage."""
+                timeout_info = (
+                    "[Retry #%s] %s' timeout reached when trying to download"
+                    % (retry_state.attempt_number, timeout)
+                )
+                logger.info(timeout_info)
+                nb_info.display_html(timeout_info)
+
+                success, ordered, failed = retry_state.outcome.result()
+                if len(ordered) > 0:
+                    logger.warning(
+                        "%s products have been ordered but could not be downloaded: %s"
+                        % (len(ordered), ", ".join(ordered.keys()))
+                    )
+                if len(failed) > 0:
+                    logger.warning(
+                        "%s products have failed and could not be downloaded: %s"
+                        % (len(failed), ", ".join(failed.keys()))
+                    )
+                return success, ordered, failed
+
+            @retry(
+                stop=stop_after_delay(timeout * 60),
+                wait=_wait_callback,
+                retry_error_callback=_return_last_value,
+                retry=retry_if_not_result(_are_products_missing),
+            )
+            def _try_download_all(
+                uuids_to_download, outputs_prefix, **sentinelsat_kwargs
+            ):
+                """Download attempts, for ``tenacity`` usage."""
+                return self.api.download_all(
+                    uuids_to_download,
+                    directory_path=outputs_prefix,
+                    **sentinelsat_kwargs
+                )
+
+            success, _, _ = _try_download_all(
+                uuids_to_download, outputs_prefix=outputs_prefix, **sentinelsat_kwargs
             )
 
             for pm in product_managers:
