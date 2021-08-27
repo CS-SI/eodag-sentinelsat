@@ -17,8 +17,10 @@
 """Sentinelsat plugin to EODAG."""
 
 import ast
+import json
 import logging as py_logging
 import shutil
+import types
 from datetime import date, datetime
 
 from dateutil.parser import isoparse
@@ -39,7 +41,7 @@ from eodag.utils.exceptions import (
     RequestError,
 )
 from eodag.utils.notebook import NotebookWidgets
-from sentinelsat import SentinelAPI, ServerError
+from sentinelsat import LTAError, SentinelAPI, SentinelAPIError, ServerError
 from tenacity import retry, retry_if_not_result, stop_after_delay
 
 logger = py_logging.getLogger("eodag.plugins.apis.sentinelsat")
@@ -307,9 +309,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
                             here and will override any other values defined in a
                             configuration file or with environment variables.
-                            ``checksum``, ``max_attempts``, ``n_concurrent_dl`` and
-                            ``lta_retry_delay`` can be passed to ``sentinelsat.download_all``
-                            directly.
+                            ``checksum``, ``max_attempts`` and ``n_concurrent_dl``
+                            can be passed to ``sentinelsat.download_all`` directly.
         :return: A collection of absolute paths to the downloaded products
         :rtype: list
         """
@@ -337,8 +338,7 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             sentinelsat_kwargs = {
                 k: kwargs.pop(k)
                 for k in list(kwargs)
-                if k
-                in ["checksum", "max_attempts", "n_concurrent_dl", "lta_retry_delay"]
+                if k in ["checksum", "max_attempts", "n_concurrent_dl"]
             }
             # Download all products
             # Three dicts returned by sentinelsat.download_all, their key is the uuid:
@@ -370,7 +370,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                 logger.info(retry_info)
                 nb_info.display_html(retry_info)
 
-                return wait * 60
+                # wait time is already spent on sentinelsat side, set to 0 here
+                return 0
 
             def _return_last_value(retry_state):
                 """Return the result of the last call attempt, for ``tenacity`` usage."""
@@ -385,14 +386,38 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                 if len(ordered) > 0:
                     logger.warning(
                         "%s products have been ordered but could not be downloaded: %s"
-                        % (len(ordered), ", ".join(ordered.keys()))
+                        % (len(ordered), ", ".join(ordered))
                     )
                 if len(failed) > 0:
                     logger.warning(
                         "%s products have failed and could not be downloaded: %s"
-                        % (len(failed), ", ".join(failed.keys()))
+                        % (len(failed), ", ".join(failed))
                     )
                 return success, ordered, failed
+
+            # loop retry using eodag: limit sentinelsat retry time to ``wait`` parameter
+            self.api.lta_timeout = wait * 60
+
+            # store progress bars created by sentinelsat to avoid new ones to be created at each download try
+            create_sentinelsat_pbar = self.api.downloader._tqdm
+            sentinelsat_pbars_dict = {}
+
+            def _pass(self):
+                pass
+
+            def _tqdm(self, **kwargs):
+                """sentinelsat progressbar wrapper"""
+                kwargs_str = json.dumps(kwargs, sort_keys=True)
+                pbar = sentinelsat_pbars_dict.get(kwargs_str, None)
+                if pbar is None:
+                    pbar = create_sentinelsat_pbar(**kwargs)
+                    # pbar kept opened until the end of download tries
+                    pbar.really_close = pbar.close
+                    pbar.close = types.MethodType(_pass, pbar)
+                    sentinelsat_pbars_dict[kwargs_str] = pbar
+                return pbar
+
+            self.api.downloader._tqdm = types.MethodType(_tqdm, self.api.downloader)
 
             @retry(
                 stop=stop_after_delay(timeout * 60),
@@ -403,16 +428,26 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             def _try_download_all(
                 uuids_to_download, outputs_prefix, **sentinelsat_kwargs
             ):
-                """Download attempts, for ``tenacity`` usage."""
-                return self.api.download_all(
-                    uuids_to_download,
-                    directory_path=outputs_prefix,
-                    **sentinelsat_kwargs
-                )
+                try:
+                    """Download attempts, for ``tenacity`` usage."""
+                    return self.api.download_all(
+                        uuids_to_download,
+                        directory_path=outputs_prefix,
+                        fail_fast=True,
+                        lta_retry_delay=wait * 60,
+                        **sentinelsat_kwargs
+                    )
+                except (LTAError, ServerError, SentinelAPIError):
+                    # success, ordered, failed
+                    return [], [], uuids_to_download
 
             success, _, _ = _try_download_all(
                 uuids_to_download, outputs_prefix=outputs_prefix, **sentinelsat_kwargs
             )
+
+            # close progress bars created by sentinelsat
+            for pbar in sentinelsat_pbars_dict.values():
+                pbar.really_close()
 
             for pm in product_managers:
                 if pm.uuid in success:
