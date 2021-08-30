@@ -399,8 +399,12 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             self.api.lta_timeout = wait * 60
 
             # store progress bars created by sentinelsat to avoid new ones to be created at each download try
-            create_sentinelsat_pbar = self.api.downloader._tqdm
             sentinelsat_pbars_dict = {}
+
+            if progress_callback is None:
+                create_sentinelsat_pbar = ProgressCallback
+            else:
+                create_sentinelsat_pbar = progress_callback.copy
 
             def _pass(self):
                 pass
@@ -410,11 +414,22 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                 kwargs_str = json.dumps(kwargs, sort_keys=True)
                 pbar = sentinelsat_pbars_dict.get(kwargs_str, None)
                 if pbar is None:
-                    pbar = create_sentinelsat_pbar(**kwargs)
+                    # use passed pbar at first, then create new ones
+                    if progress_callback is not None and not sentinelsat_pbars_dict:
+                        pbar = progress_callback
+                        for k in kwargs.keys():
+                            setattr(pbar, k, kwargs[k])
+                            pbar.refresh()
+                    else:
+                        pbar = create_sentinelsat_pbar(**kwargs)
+
                     # pbar kept opened until the end of download tries
                     pbar.really_close = pbar.close
                     pbar.close = types.MethodType(_pass, pbar)
+
+                    # store 1 pbar per kwargs to avoid duplicates
                     sentinelsat_pbars_dict[kwargs_str] = pbar
+
                 return pbar
 
             self.api.downloader._tqdm = types.MethodType(_tqdm, self.api.downloader)
