@@ -261,7 +261,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
                             here and will override any other values defined in a
                             configuration file or with environment variables.
-                            ``checksum`` can be passed to ``sentinelsat.download_all`` directly
+                            ``checksum``, ``max_attempts``, ``n_concurrent_dl``, ``fail_fast``
+                            and ``node_filter`` can be passed to ``sentinelsat.download_all`` directly
                             which is used under the hood.
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
@@ -307,8 +308,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
                             here and will override any other values defined in a
                             configuration file or with environment variables.
-                            ``checksum``, ``max_attempts`` and ``n_concurrent_dl``
-                            can be passed to ``sentinelsat.download_all`` directly.
+                            ``checksum``, ``max_attempts``, ``n_concurrent_dl``, ``fail_fast``
+                            and ``node_filter`` can be passed to ``sentinelsat.download_all`` directly.
         :return: A collection of absolute paths to the downloaded products
         :rtype: list
         """
@@ -336,7 +337,14 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
             sentinelsat_kwargs = {
                 k: kwargs.pop(k)
                 for k in list(kwargs)
-                if k in ["checksum", "max_attempts", "n_concurrent_dl"]
+                if k
+                in [
+                    "max_attempts",
+                    "checksum",
+                    "n_concurrent_dl",
+                    "fail_fast",
+                    "nodefilter",
+                ]
             }
 
             if progress_callback is None:
