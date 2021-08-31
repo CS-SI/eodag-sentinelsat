@@ -19,6 +19,7 @@
 import ast
 import logging as py_logging
 import shutil
+import types
 from datetime import date, datetime
 
 from dateutil.parser import isoparse
@@ -40,7 +41,6 @@ from eodag.utils.exceptions import (
 )
 from eodag.utils.notebook import NotebookWidgets
 from sentinelsat import SentinelAPI, ServerError
-from tenacity import retry, retry_if_not_result, stop_after_delay
 
 logger = py_logging.getLogger("eodag.plugins.apis.sentinelsat")
 
@@ -261,7 +261,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
                             here and will override any other values defined in a
                             configuration file or with environment variables.
-                            ``checksum`` can be passed to ``sentinelsat.download_all`` directly
+                            ``checksum``, ``max_attempts``, ``n_concurrent_dl``, ``fail_fast``
+                            and ``node_filter`` can be passed to ``sentinelsat.download_all`` directly
                             which is used under the hood.
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
@@ -307,9 +308,8 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
         :param dict kwargs: ``outputs_prefix`` (str), ``extract`` (bool)  can be provided
                             here and will override any other values defined in a
                             configuration file or with environment variables.
-                            ``checksum``, ``max_attempts``, ``n_concurrent_dl`` and
-                            ``lta_retry_delay`` can be passed to ``sentinelsat.download_all``
-                            directly.
+                            ``checksum``, ``max_attempts``, ``n_concurrent_dl``, ``fail_fast``
+                            and ``node_filter`` can be passed to ``sentinelsat.download_all`` directly.
         :return: A collection of absolute paths to the downloaded products
         :rtype: list
         """
@@ -338,80 +338,63 @@ class SentinelsatAPI(Api, QueryStringSearch, Download):
                 k: kwargs.pop(k)
                 for k in list(kwargs)
                 if k
-                in ["checksum", "max_attempts", "n_concurrent_dl", "lta_retry_delay"]
+                in [
+                    "max_attempts",
+                    "checksum",
+                    "n_concurrent_dl",
+                    "fail_fast",
+                    "nodefilter",
+                ]
             }
+
+            if progress_callback is None:
+                create_sentinelsat_pbar = ProgressCallback
+            else:
+                create_sentinelsat_pbar = progress_callback.copy
+
+            # Use eodag progress bars and avoid duplicates
+            self.api.pbar_count = 0
+
+            def _tqdm(self, **kwargs):
+                """sentinelsat progressbar wrapper"""
+                if self.api.pbar_count == 0 and progress_callback is not None:
+                    pbar = progress_callback
+                    for k in kwargs.keys():
+                        setattr(pbar, k, kwargs[k])
+                        pbar.refresh()
+                else:
+                    pbar = create_sentinelsat_pbar(**kwargs)
+                self.api.pbar_count += 1
+                return pbar
+
+            self.api.downloader._tqdm = types.MethodType(_tqdm, self.api.downloader)
+
+            # another output for notebooks
+            nb_info = NotebookWidgets()
+
+            retry_info = (
+                "Will try downloading every %s' for %s' if product is not ONLINE"
+                % (wait, timeout)
+            )
+            logger.info(retry_info)
+            logger.info(
+                "Once ordered, OFFLINE/LTA product download retries may not be logged"
+            )
+            nb_info.display_html(retry_info)
+
+            self.api.lta_timeout = timeout * 60
+
             # Download all products
             # Three dicts returned by sentinelsat.download_all, their key is the uuid:
             # 1. Product information from get_product_info() as well as the path on disk.
             # 2. Product information for products successfully triggered for retrieval
             # from the long term archive but not downloaded.
             # 3. Product information of products where either downloading or triggering failed
-
-            # another output for notebooks
-            nb_info = NotebookWidgets()
-
-            def _are_products_missing(results):
-                """Check if some products have not been downloaded yet, for ``tenacity`` usage."""
-                success, ordered, failed = results
-                if len(ordered) > 0 or len(failed) > 0:
-                    return False
-                else:
-                    return True
-
-            def _wait_callback(retry_state):
-                """Callback executed after each download attempt failure, for ``tenacity`` usage.
-
-                :returns: wait time before next try (in seconds)
-                """
-                retry_info = (
-                    "[Retry #%s] Waiting %ss until next download try (retry every %s' for %s')"
-                    % (retry_state.attempt_number, wait * 60, wait, timeout)
-                )
-                logger.info(retry_info)
-                nb_info.display_html(retry_info)
-
-                return wait * 60
-
-            def _return_last_value(retry_state):
-                """Return the result of the last call attempt, for ``tenacity`` usage."""
-                timeout_info = (
-                    "[Retry #%s] %s' timeout reached when trying to download"
-                    % (retry_state.attempt_number, timeout)
-                )
-                logger.info(timeout_info)
-                nb_info.display_html(timeout_info)
-
-                success, ordered, failed = retry_state.outcome.result()
-                if len(ordered) > 0:
-                    logger.warning(
-                        "%s products have been ordered but could not be downloaded: %s"
-                        % (len(ordered), ", ".join(ordered.keys()))
-                    )
-                if len(failed) > 0:
-                    logger.warning(
-                        "%s products have failed and could not be downloaded: %s"
-                        % (len(failed), ", ".join(failed.keys()))
-                    )
-                return success, ordered, failed
-
-            @retry(
-                stop=stop_after_delay(timeout * 60),
-                wait=_wait_callback,
-                retry_error_callback=_return_last_value,
-                retry=retry_if_not_result(_are_products_missing),
-            )
-            def _try_download_all(
-                uuids_to_download, outputs_prefix, **sentinelsat_kwargs
-            ):
-                """Download attempts, for ``tenacity`` usage."""
-                return self.api.download_all(
-                    uuids_to_download,
-                    directory_path=outputs_prefix,
-                    **sentinelsat_kwargs
-                )
-
-            success, _, _ = _try_download_all(
-                uuids_to_download, outputs_prefix=outputs_prefix, **sentinelsat_kwargs
+            success, _, _ = self.api.download_all(
+                uuids_to_download,
+                directory_path=outputs_prefix,
+                lta_retry_delay=wait * 60,
+                **sentinelsat_kwargs
             )
 
             for pm in product_managers:

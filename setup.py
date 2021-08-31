@@ -38,7 +38,6 @@ setup(
         "sentinelsat",
         "eodag >= 2.3.0b1",
         "python-dateutil",
-        "tenacity",
     ],
     extras_require={
         "dev": [

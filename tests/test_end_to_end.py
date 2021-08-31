@@ -34,7 +34,7 @@ def test_end_to_end_complete_scihub(dag, download_dir):
     """Complete end-to-end test with SCIHUB for search, download and download_all"""
     # Search for products that are ONLINE and as small as possible
     today = datetime.date.today()
-    month_span = datetime.timedelta(weeks=4)
+    month_span = datetime.timedelta(weeks=2)
     search_results, _ = dag.search(
         productType="S2_MSI_L1C",
         start=(today - month_span).isoformat(),
