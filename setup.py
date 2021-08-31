@@ -35,7 +35,7 @@ setup(
     license="GPLv3",
     packages=find_packages(),
     install_requires=[
-        "sentinelsat",
+        "sentinelsat >= 1.1.0",
         "eodag >= 2.3.0b1",
         "python-dateutil",
     ],
