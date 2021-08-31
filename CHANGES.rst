@@ -5,7 +5,7 @@ Release history
 ++++++++++++++++++
 
 - LTA products handling with `sentinelsat`
-  [v1.1.0](https://github.com/sentinelsat/sentinelsat/releases/tag/v1.1.0) (#32)
+  `v1.1.0 <https://github.com/sentinelsat/sentinelsat/releases/tag/v1.1.0>`_ (#32)
 
 0.4.0 (2021-07-30)
 ++++++++++++++++++
