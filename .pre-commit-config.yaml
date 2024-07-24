@@ -23,15 +23,10 @@ repos:
     -   id: flake8
 
 -   repo: 'https://github.com/ambv/black'
-    rev: 20.8b1
+    rev: 24.4.2
     hooks:
     -   id: black
         args: ['--safe']
-
--   repo: 'https://github.com/chewse/pre-commit-mirrors-pydocstyle'
-    rev: v2.1.1
-    hooks:
-    -   id: pydocstyle
 
 -   repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.7.0

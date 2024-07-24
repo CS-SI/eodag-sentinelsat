@@ -26,7 +26,7 @@ with open(os.path.join(BASEDIR, "README.rst"), "r") as f:
 
 setup(
     name="eodag_sentinelsat",
-    version="0.4.1",
+    version="0.4.1.post1",
     description="Sentinelsat plugin to EODAG (https://github.com/CS-SI/eodag)",
     long_description=readme,
     author="CS Systemes d'Information (CSSI)",
