@@ -1,3 +1,9 @@
+    [!CAUTION]
+
+    **This repository is no longer maintained** as SciHub / Copernicus Open Access Hub is now closed.
+    You should now directly use `EODAG <https://github.com/CS-SI/eodag>`_ with ``cop_dataspace`` (Copernicus Dataspace
+    Ecosystem) provider which is the official data distribution system for Copernicus Sentinel data.
+
 .. image:: https://badge.fury.io/py/eodag-sentinelsat.svg
     :target: https://badge.fury.io/py/eodag-sentinelsat
 
